@@ -6,12 +6,23 @@ import com.pengrad.telegrambot.impl.UpdatesHandler;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.model.User;
+import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
+import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.request.EditMessageReplyMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
+import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
+import ru.zoommax.botapp.view.KeyboardMarkupsArrays;
 import ru.zoommax.botapp.view.ViewMessage;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -28,6 +39,32 @@ public class BotApp implements Runnable {
     @Override
     public void run() {
         Logger logger = org.slf4j.LoggerFactory.getLogger(BotApp.class);
+        UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
+        userMarkupsPojo = userMarkupsPojo.find();
+        if (userMarkupsPojo != null) {
+            HashMap<String, List<byte[]>> markups = userMarkupsPojo.getMarkups();
+            HashMap<String, List<InlineKeyboardMarkup>> userKeyboardMarkups = new HashMap<>();
+            for (String chatId : markups.keySet()) {
+                List<InlineKeyboardMarkup> inlineKeyboardMarkups = new ArrayList<>();
+                for (byte[] markup : markups.get(chatId)) {
+                    ByteArrayInputStream bais = new ByteArrayInputStream(markup);
+                    ObjectInputStream ois = null;
+                    try {
+                        ois = new ObjectInputStream(bais);
+                        inlineKeyboardMarkups.add((InlineKeyboardMarkup) ois.readObject());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                userKeyboardMarkups.put(chatId, inlineKeyboardMarkups);
+            }
+            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups = userKeyboardMarkups;
+        }else {
+            userMarkupsPojo = new UserMarkupsPojo();
+            HashMap<String, List<byte[]>> markups = new HashMap<>();
+            userMarkupsPojo.setMarkups(markups);
+            userMarkupsPojo.insert();
+        }
         bot.setUpdatesListener(updates -> {
             // ... process updates
             // return id of last processed update or confirm them all
@@ -74,13 +111,31 @@ public class BotApp implements Runnable {
                 ViewMessage viewMessage = null;
                 if (update.message() != null) {
                     if (update.message().text().startsWith("/")) {
+                        if (update.message().text().equals("/start")) {
+                            userPojo.setViewMessageId(bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId());
+                            userPojo.insert();
+                        }
                         viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }else {
                         viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }
                 }
                 if (update.callbackQuery() != null) {
-                    viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                    if (update.callbackQuery().data().contains("nextButton")){
+                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
+                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(chatId).get(keysPage+1);
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(userPojo.getViewMessageId()));
+                        e.replyMarkup(inlineKeyboardMarkup);
+                        bot.execute(e);
+                    } else if (update.callbackQuery().data().contains("prevButton")){
+                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
+                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(chatId).get(keysPage-1);
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(userPojo.getViewMessageId()));
+                        e.replyMarkup(inlineKeyboardMarkup);
+                        bot.execute(e);
+                    } else {
+                        viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                    }
                 }
                 if (update.inlineQuery() != null) {
                     viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
