@@ -3,7 +3,6 @@ import com.pengrad.telegrambot.request.SendMessage;
 import ru.zoommax.botapp.Listener;
 import ru.zoommax.botapp.db.pojo.UserPojo;
 import ru.zoommax.botapp.view.KeyboardMarkup;
-import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.view.ViewMessage;
 
 import java.io.File;

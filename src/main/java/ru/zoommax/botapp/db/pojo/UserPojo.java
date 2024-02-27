@@ -2,22 +2,32 @@ package ru.zoommax.botapp.db.pojo;
 
 import com.mongodb.client.MongoCollection;
 import lombok.Data;
-import ru.zoommax.botapp.db.DBConnector;
+import lombok.Getter;
+import lombok.Setter;
+import ru.zoommax.MongoDBConnector;
 
 import static com.mongodb.client.model.Filters.eq;
 
-@Data
-public class UserPojo extends DBConnector {
+
+public class UserPojo extends MongoDBConnector {
+    @Getter
+    @Setter
     private long chatId;
+    @Getter
+    @Setter
     private long ViewMessageId;
+    @Getter
+    @Setter
     private long lastMessageId;
+    @Getter
+    @Setter
     private MessageType messageType;
 
     public UserPojo(){}
 
     @SuppressWarnings("unchecked")
     private MongoCollection<UserPojo> collection() {
-        return (MongoCollection<UserPojo>) getCollection("users", UserPojo.class);
+        return (MongoCollection<UserPojo>) getCollection("users", "BotApp", this);
     }
 
     private boolean exist() {
@@ -43,7 +53,6 @@ public class UserPojo extends DBConnector {
     }
 
     public UserPojo find() {
-        final UserPojo userPojo = collection().find(eq("chatId", this.chatId)).first();
-        return userPojo;
+        return collection().find(eq("chatId", this.chatId)).first();
     }
 }
