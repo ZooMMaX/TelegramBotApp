@@ -119,7 +119,7 @@ public class BotApp implements Runnable {
                 if (update.message() != null) {
                     if (update.message().photo() != null) {
                         viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
-                    }else if (update.message().text() != null & update.message().text().startsWith("/")) {
+                    }else if (update.message().text() != null && update.message().text().startsWith("/")) {
                         if (update.message().text().equals("/start")) {
                             userPojo.setViewMessageId(bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId());
                             userPojo.insert();
