@@ -1,3 +1,4 @@
+import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import ru.zoommax.botapp.Listener;
@@ -45,6 +46,11 @@ public class Listeners implements Listener {
                     .callbackKeyboard(keyboardMarkup)
                     .build();
         }
+        return null;
+    }
+
+    @Override
+    public ViewMessage onPicture(PhotoSize[] photoSize, String caption, int messageId, long chatId, Update update) {
         return null;
     }
 

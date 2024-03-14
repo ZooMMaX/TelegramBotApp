@@ -4,12 +4,17 @@ import com.mongodb.client.MongoCollection;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
 import ru.zoommax.MongoDBConnector;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
 
 public class UserPojo extends MongoDBConnector {
+    Logger logger = org.slf4j.LoggerFactory.getLogger(UserPojo.class);
     @Getter
     @Setter
     private long chatId;
@@ -22,6 +27,9 @@ public class UserPojo extends MongoDBConnector {
     @Getter
     @Setter
     private MessageType messageType;
+    @Getter
+    @Setter
+    private List<Integer> messageIdsToDel;
 
     public UserPojo(){}
 

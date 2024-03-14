@@ -15,9 +15,14 @@ import java.util.List;
 public class KeyboardMarkup {
     String buttonsNames;
     String buttonsCallbackData;
+    InlineKeyboardMarkup inlineKeyboard;
     long chatId;
 
     public InlineKeyboardMarkup getInlineKeyboard() {
+
+        if (inlineKeyboard != null) {
+            return inlineKeyboard;
+        }
 
         List<List<String>> names = new ArrayList<>();
         List<List<String>> callbackData = new ArrayList<>();
@@ -59,13 +64,13 @@ public class KeyboardMarkup {
             if (x+1 < namesRow4.size()) {
                 buttonNext = new InlineKeyboardButton("→").callbackData("nextButton:" + x);
             }else {
-                buttonNext = new InlineKeyboardButton("✖").callbackData("zero");
+                buttonNext = new InlineKeyboardButton("→✖").callbackData("zero");
             }
             InlineKeyboardButton buttonPrev;
             if (x > 0) {
                 buttonPrev = new InlineKeyboardButton("←").callbackData("prevButton:" + x);
             }else {
-                buttonPrev = new InlineKeyboardButton("✖").callbackData("zero");
+                buttonPrev = new InlineKeyboardButton("✖←").callbackData("zero");
             }
             markup.addRow(buttonPrev, buttonNext);
             markups.add(markup);

@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
+import ru.zoommax.botapp.view.KeyboardMarkup;
 import ru.zoommax.botapp.view.KeyboardMarkupsArrays;
 import ru.zoommax.botapp.view.ViewMessage;
 
@@ -21,6 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -74,7 +76,7 @@ public class BotApp implements Runnable {
                 if (update.message() != null) {
                     chatId = update.message().chat().id();
                 }else if (update.callbackQuery() != null) {
-                    chatId = update.callbackQuery().message().chat().id();
+                    chatId = update.callbackQuery().from().id();
                 } else if (update.inlineQuery() != null) {
                     chatId = update.inlineQuery().from().id();
                 } else if (update.chosenInlineResult() != null) {
@@ -83,6 +85,7 @@ public class BotApp implements Runnable {
 
                 long lastMessageId = 0;
                 if (update.message() != null) {
+                    System.out.println(update);
                     lastMessageId = update.message().messageId();
                 }else if (update.callbackQuery() != null) {
                     lastMessageId = update.callbackQuery().message().messageId();
@@ -92,9 +95,13 @@ public class BotApp implements Runnable {
                 userPojo = userPojo.find();
                 if (userPojo == null) {
                     userPojo = new UserPojo();
-                    userPojo.setChatId(update.message().chat().id());
-                    userPojo.setLastMessageId(update.message().messageId());
-                    userPojo.setViewMessageId(bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId());
+                    userPojo.setChatId(chatId);
+                    userPojo.setLastMessageId(lastMessageId);
+                    try {
+                        userPojo.setViewMessageId(bot.execute(new SendMessage(chatId, "Bot starting...")).message().messageId());
+                    }catch (NullPointerException e){
+                        logger.error(Arrays.toString(e.getStackTrace()));
+                    }
                     userPojo.setMessageType(MessageType.TEXT);
                     userPojo.insert();
                 }else {
@@ -110,7 +117,9 @@ public class BotApp implements Runnable {
 
                 ViewMessage viewMessage = null;
                 if (update.message() != null) {
-                    if (update.message().text().startsWith("/")) {
+                    if (update.message().photo() != null) {
+                        viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                    }else if (update.message().text().startsWith("/")) {
                         if (update.message().text().equals("/start")) {
                             userPojo.setViewMessageId(bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId());
                             userPojo.insert();
@@ -120,19 +129,36 @@ public class BotApp implements Runnable {
                         viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }
                 }
+
                 if (update.callbackQuery() != null) {
                     if (update.callbackQuery().data().contains("nextButton")){
                         int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
-                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(chatId).get(keysPage+1);
-                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(userPojo.getViewMessageId()));
-                        e.replyMarkup(inlineKeyboardMarkup);
-                        bot.execute(e);
+                        try{
+                            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage+1);
+                        }catch (Exception e){
+                            logger.error(e.getMessage(), e);
+                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                        }
+                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage+1);
+                        if (inlineKeyboardMarkup != null) {
+                            viewMessage = ViewMessage.builder().callbackKeyboard(KeyboardMarkup.builder().inlineKeyboard(inlineKeyboardMarkup).chatId(chatId).build()).chatId(chatId).build();
+                        }else {
+                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                        }
                     } else if (update.callbackQuery().data().contains("prevButton")){
                         int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
-                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(chatId).get(keysPage-1);
-                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(userPojo.getViewMessageId()));
-                        e.replyMarkup(inlineKeyboardMarkup);
-                        bot.execute(e);
+                        try{
+                            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage-1);
+                        }catch (Exception e){
+                            logger.error(e.getMessage(), e);
+                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                        }
+                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage-1);
+                        if (inlineKeyboardMarkup != null) {
+                            viewMessage = ViewMessage.builder().callbackKeyboard(KeyboardMarkup.builder().inlineKeyboard(inlineKeyboardMarkup).chatId(chatId).build()).chatId(chatId).build();
+                        }else {
+                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                        }
                     } else {
                         viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
                     }
@@ -143,7 +169,9 @@ public class BotApp implements Runnable {
                 if (update.chosenInlineResult() != null) {
                     viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
                 }
-                assert viewMessage != null;
+                if (viewMessage == null) {
+                    return UpdatesListener.CONFIRMED_UPDATES_ALL;
+                }
                 executor.submit(viewMessage);
             }
             return UpdatesListener.CONFIRMED_UPDATES_ALL;
