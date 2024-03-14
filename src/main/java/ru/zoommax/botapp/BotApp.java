@@ -119,12 +119,21 @@ public class BotApp implements Runnable {
                 if (update.message() != null) {
                     if (update.message().photo() != null) {
                         viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
-                    }else if (update.message().text() != null && update.message().text().startsWith("/")) {
-                        if (update.message().text().equals("/start")) {
-                            userPojo.setViewMessageId(bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId());
-                            userPojo.insert();
+                    }else if (update.message().text() != null){
+                        if(update.message().text().startsWith("/")) {
+                            if (update.message().text().equals("/start")) {
+                                long msgId = 0;
+                                try {
+                                    msgId = bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId();
+                                }catch (NullPointerException e){
+                                    e.printStackTrace();
+                                    msgId = 0;
+                                }
+                                userPojo.setViewMessageId(msgId);
+                                userPojo.insert();
+                            }
+                            viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                         }
-                        viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }else {
                         viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }
