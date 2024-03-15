@@ -85,7 +85,6 @@ public class BotApp implements Runnable {
 
                 long lastMessageId = 0;
                 if (update.message() != null) {
-                    System.out.println(update);
                     lastMessageId = update.message().messageId();
                 }else if (update.callbackQuery() != null) {
                     lastMessageId = update.callbackQuery().message().messageId();
