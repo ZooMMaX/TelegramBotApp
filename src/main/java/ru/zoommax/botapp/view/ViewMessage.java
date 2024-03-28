@@ -2,6 +2,7 @@ package ru.zoommax.botapp.view;
 
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InputMediaAudio;
+import com.pengrad.telegrambot.model.request.InputMediaDocument;
 import com.pengrad.telegrambot.model.request.InputMediaPhoto;
 import com.pengrad.telegrambot.model.request.InputMediaVideo;
 import com.pengrad.telegrambot.request.*;
@@ -13,7 +14,6 @@ import ru.zoommax.botapp.db.pojo.UserPojo;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static ru.zoommax.botapp.BotApp.bot;
@@ -28,6 +28,7 @@ public class ViewMessage implements Runnable{
     private List<File> images;
     private File video;
     private File audio;
+    private File document;
     private String caption;
 
     @Override
@@ -51,14 +52,14 @@ public class ViewMessage implements Runnable{
             bot.execute(new DeleteMessage(chatId, Math.toIntExact(messageId)));
         }
 
-        if (image == null && video == null && audio == null && message == null && caption == null && images == null) {
+        if (image == null && video == null && audio == null && message == null && caption == null && images == null && document == null) {
             EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
             e.replyMarkup(callbackKeyboard.getInlineKeyboard());
             bot.execute(e);
         } else {
 
             if (messageType == MessageType.TEXT) {
-                if (image != null || video != null || audio != null || images != null) {
+                if (image != null || video != null || audio != null || images != null || document != null) {
                     sendMedia(chatId);
                     return;
                 }
@@ -77,8 +78,12 @@ public class ViewMessage implements Runnable{
                     sendText(chatId);
                     return;
                 }
-                if (image != null && video != null && audio != null && images != null || image != null && video != null || image != null && audio != null || image != null && images != null ||
-                        video != null && audio != null || video != null && images != null || audio != null && images != null) {
+
+                if (image != null && video != null && audio != null && images != null && document != null ||
+                        image != null && video != null || image != null && audio != null || image != null && images != null ||
+                        image != null && document != null || video != null && audio != null && images != null && document != null ||
+                        video != null && audio != null && images != null || video != null && audio != null && document != null ||
+                        video != null && images != null && document != null || audio != null && images != null && document != null) {
                     logger.error("You can't send image, video and audio at the same time");
                     return;
                 }
@@ -99,6 +104,10 @@ public class ViewMessage implements Runnable{
                 if (images != null) {
                     sendMedia(chatId);
                 }
+
+                if (document != null) {
+                    bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaDocument(document)));
+                }
             }
         }
     }
@@ -113,8 +122,11 @@ public class ViewMessage implements Runnable{
         int viewMessageId = Math.toIntExact(userPojo.getViewMessageId());
         Logger logger = LoggerFactory.getLogger(ViewMessage.class);
         bot.execute(new DeleteMessage(chatId, Math.toIntExact(viewMessageId)));
-        if (image != null && video != null && audio != null && images != null || image != null && video != null || image != null && audio != null || image != null && images != null ||
-                video != null && audio != null || video != null && images != null || audio != null && images != null) {
+        if (image != null && video != null && audio != null && images != null && document != null ||
+                image != null && video != null || image != null && audio != null || image != null && images != null ||
+                image != null && document != null || video != null && audio != null && images != null && document != null ||
+                video != null && audio != null && images != null || video != null && audio != null && document != null ||
+                video != null && images != null && document != null || audio != null && images != null && document != null) {
             logger.error("You can't send image, video and audio at the same time");
             return;
         }
@@ -167,6 +179,14 @@ public class ViewMessage implements Runnable{
                 editMessageCaption.caption(caption);
                 bot.execute(editMessageCaption);
             }
+        }
+
+        if (document != null) {
+            SendDocument sendDocument = new SendDocument(chatId, document).caption(caption);
+            if (callbackKeyboard != null) {
+                sendDocument.replyMarkup(callbackKeyboard.getInlineKeyboard());
+            }
+            viewMessageId = bot.execute(sendDocument).message().messageId();
         }
         userPojo.setViewMessageId(viewMessageId);
         userPojo.setMessageType(MessageType.MEDIA);
