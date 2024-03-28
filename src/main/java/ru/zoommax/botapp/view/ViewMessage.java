@@ -90,15 +90,45 @@ public class ViewMessage implements Runnable{
 
                 if (image != null) {
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaPhoto(image)));
+                    if (caption != null) {
+                        EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
+                        editMessageCaption.caption(caption);
+                        bot.execute(editMessageCaption);
+                    }
+                    if (callbackKeyboard != null) {
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
+                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        bot.execute(e);
+                    }
                 }
 
 
                 if (video != null) {
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaVideo(video)));
+                    if (caption != null) {
+                        EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
+                        editMessageCaption.caption(caption);
+                        bot.execute(editMessageCaption);
+                    }
+                    if (callbackKeyboard != null) {
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
+                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        bot.execute(e);
+                    }
                 }
 
                 if (audio != null) {
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaAudio(audio)));
+                    if (caption != null) {
+                        EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
+                        editMessageCaption.caption(caption);
+                        bot.execute(editMessageCaption);
+                    }
+                    if (callbackKeyboard != null) {
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
+                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        bot.execute(e);
+                    }
                 }
 
                 if (images != null) {
@@ -107,6 +137,16 @@ public class ViewMessage implements Runnable{
 
                 if (document != null) {
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaDocument(document)));
+                    if (caption != null) {
+                        EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
+                        editMessageCaption.caption(caption);
+                        bot.execute(editMessageCaption);
+                    }
+                    if (callbackKeyboard != null) {
+                        EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
+                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        bot.execute(e);
+                    }
                 }
             }
         }
