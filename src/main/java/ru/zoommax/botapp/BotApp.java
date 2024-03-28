@@ -132,9 +132,9 @@ public class BotApp implements Runnable {
                                 userPojo.insert();
                             }
                             viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                        }else {
+                            viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                         }
-                    }else {
-                        viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                     }
                 }
 
