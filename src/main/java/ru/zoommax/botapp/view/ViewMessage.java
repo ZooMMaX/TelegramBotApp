@@ -1,10 +1,7 @@
 package ru.zoommax.botapp.view;
 
 import com.pengrad.telegrambot.model.Message;
-import com.pengrad.telegrambot.model.request.InputMediaAudio;
-import com.pengrad.telegrambot.model.request.InputMediaDocument;
-import com.pengrad.telegrambot.model.request.InputMediaPhoto;
-import com.pengrad.telegrambot.model.request.InputMediaVideo;
+import com.pengrad.telegrambot.model.request.*;
 import com.pengrad.telegrambot.request.*;
 import lombok.Builder;
 import org.slf4j.Logger;
@@ -64,7 +61,7 @@ public class ViewMessage implements Runnable{
                     return;
                 }
 
-                bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message));
+                bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message).parseMode(ParseMode.MarkdownV2));
 
 
                 if (callbackKeyboard != null) {
@@ -172,7 +169,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (image != null) {
-            SendPhoto sendPhoto = new SendPhoto(chatId, image).caption(caption);
+            SendPhoto sendPhoto = new SendPhoto(chatId, image).caption(caption).parseMode(ParseMode.MarkdownV2);
             if (callbackKeyboard != null) {
                 sendPhoto.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -180,7 +177,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (video != null) {
-            SendVideo sendVideo = new SendVideo(chatId, video).caption(caption);
+            SendVideo sendVideo = new SendVideo(chatId, video).caption(caption).parseMode(ParseMode.MarkdownV2);
             if (callbackKeyboard != null) {
                 sendVideo.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -188,7 +185,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (audio != null) {
-            SendAudio sendAudio = new SendAudio(chatId, audio).caption(caption);
+            SendAudio sendAudio = new SendAudio(chatId, audio).caption(caption).parseMode(ParseMode.MarkdownV2);
             if (callbackKeyboard != null) {
                 sendAudio.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -216,13 +213,13 @@ public class ViewMessage implements Runnable{
             }
             if (caption != null) {
                 EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, messageIds.get(messageIds.size()-1));
-                editMessageCaption.caption(caption);
+                editMessageCaption.caption(caption).parseMode(ParseMode.MarkdownV2);
                 bot.execute(editMessageCaption);
             }
         }
 
         if (document != null) {
-            SendDocument sendDocument = new SendDocument(chatId, document).caption(caption);
+            SendDocument sendDocument = new SendDocument(chatId, document).caption(caption).parseMode(ParseMode.MarkdownV2);
             if (callbackKeyboard != null) {
                 sendDocument.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -239,7 +236,7 @@ public class ViewMessage implements Runnable{
         userPojo = userPojo.find();
         int viewMessageId = Math.toIntExact(userPojo.getViewMessageId());
         bot.execute(new DeleteMessage(chatId, Math.toIntExact(viewMessageId)));
-        SendMessage sendMessage = new SendMessage(chatId, message);
+        SendMessage sendMessage = new SendMessage(chatId, message).parseMode(ParseMode.MarkdownV2);
         if (callbackKeyboard != null) {
             sendMessage.replyMarkup(callbackKeyboard.getInlineKeyboard());
         }
