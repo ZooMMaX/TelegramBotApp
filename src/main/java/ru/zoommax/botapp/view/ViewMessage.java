@@ -29,6 +29,7 @@ public class ViewMessage implements Runnable{
     private File audio;
     private File document;
     private String caption;
+    private boolean captionAsMessage = false;
 
     @Override
     public void run() {
@@ -36,6 +37,7 @@ public class ViewMessage implements Runnable{
         if (caption != null && caption.length() > 1024) {
             message = caption;
             caption = null;
+            captionAsMessage = true;
             images = new ArrayList<>();
             images.add(image);
             image = null;
@@ -45,9 +47,11 @@ public class ViewMessage implements Runnable{
         userPojo = userPojo.find();
 
         List<Integer> messageIdsToDel = userPojo.getMessageIdsToDel();
-        if(messageIdsToDel != null) {
-            for (int messageId : messageIdsToDel) {
-                bot.execute(new DeleteMessage(chatId, messageId));
+        if ((message != null && !captionAsMessage) || image != null || video != null || audio != null || images != null || document != null) {
+            if (messageIdsToDel != null) {
+                for (int messageId : messageIdsToDel) {
+                    bot.execute(new DeleteMessage(chatId, messageId));
+                }
             }
         }
 
@@ -213,6 +217,7 @@ public class ViewMessage implements Runnable{
                 messageIds.add(value.messageId());
             }
             userPojo.setMessageIdsToDel(messageIds);
+            userPojo.insert();
             if (callbackKeyboard != null) {
                 messageIds.add(messages[messageIds.size()-1].messageId()+1);
                 if ((message == null || message.isEmpty()) && caption == null) {
@@ -221,6 +226,7 @@ public class ViewMessage implements Runnable{
                     message = caption;
                 }
                 sendText(chatId);
+                return;
             }else {
                 viewMessageId = messageIds.get(messageIds.size()-1);
             }
