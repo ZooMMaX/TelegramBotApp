@@ -18,6 +18,7 @@ public class KeyboardMarkup {
     String buttonsCallbackData;
     InlineKeyboardMarkup inlineKeyboard;
     long chatId;
+    Logger logger = org.slf4j.LoggerFactory.getLogger(KeyboardMarkup.class);
 
     public InlineKeyboardMarkup getInlineKeyboard() {
 
@@ -46,6 +47,7 @@ public class KeyboardMarkup {
             namesRow4.add(names.subList(i, Math.min(i + 4, names.size())));
         }
 
+
         for (int i = 0; i < callbackData.size(); i += 4) {
             callbackDataRow4.add(callbackData.subList(i, Math.min(i + 4, callbackData.size())));
         }
@@ -54,10 +56,14 @@ public class KeyboardMarkup {
         for (int x = 0; x < namesRow4.size(); x++) {
             List<List<String>> namesRow = namesRow4.get(x);
             List<List<String>> callbackDataRow = callbackDataRow4.get(x);
+            if (namesRow.size() != callbackDataRow.size()) {
+                logger.error("Names and callback data size mismatch");
+                return null;
+            }
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
             for (int i = 0; i < namesRow.size(); i++) {
                 List<InlineKeyboardButton> buttons = new ArrayList<>();
-                for (int j = 0; j < names.get(i).size(); j++) {
+                for (int j = 0; j < namesRow.get(i).size(); j++) {
                     buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).callbackData(callbackDataRow.get(i).get(j)));
                 }
                 markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
