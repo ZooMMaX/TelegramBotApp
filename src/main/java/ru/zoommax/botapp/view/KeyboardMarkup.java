@@ -2,6 +2,7 @@ package ru.zoommax.botapp.view;
 
 import com.pengrad.telegrambot.model.request.*;
 import lombok.Builder;
+import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +32,7 @@ public class KeyboardMarkup {
             List<String> row = new ArrayList<>(Arrays.asList(name.split(";")));
             names.add(row);
         }
+
 
         for (String data : buttonsCallbackData.split("\n")) {
             List<String> row = new ArrayList<>(Arrays.asList(data.split(";")));

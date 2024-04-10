@@ -11,6 +11,7 @@ import ru.zoommax.botapp.db.pojo.UserPojo;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static ru.zoommax.botapp.BotApp.bot;
@@ -18,6 +19,7 @@ import static ru.zoommax.botapp.BotApp.bot;
 @Builder
 public class ViewMessage implements Runnable{
 
+    private static final Logger log = LoggerFactory.getLogger(ViewMessage.class);
     private String message;
     private final long chatId;
     private KeyboardMarkup callbackKeyboard;
@@ -31,6 +33,13 @@ public class ViewMessage implements Runnable{
     @Override
     public void run() {
         Logger logger = LoggerFactory.getLogger(ViewMessage.class);
+        if (caption != null && caption.length() > 1024) {
+            message = caption;
+            caption = null;
+            images = new ArrayList<>();
+            images.add(image);
+            image = null;
+        }
         UserPojo userPojo = new UserPojo();
         userPojo.setChatId(chatId);
         userPojo = userPojo.find();
@@ -61,7 +70,7 @@ public class ViewMessage implements Runnable{
                     return;
                 }
 
-                bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message).parseMode(ParseMode.MarkdownV2));
+                bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message).parseMode(ParseMode.Markdown));
 
 
                 if (callbackKeyboard != null) {
@@ -89,7 +98,7 @@ public class ViewMessage implements Runnable{
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaPhoto(image)));
                     if (caption != null) {
                         EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
-                        editMessageCaption.caption(caption);
+                        editMessageCaption.caption(caption).parseMode(ParseMode.Markdown);
                         bot.execute(editMessageCaption);
                     }
                     if (callbackKeyboard != null) {
@@ -104,7 +113,7 @@ public class ViewMessage implements Runnable{
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaVideo(video)));
                     if (caption != null) {
                         EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
-                        editMessageCaption.caption(caption);
+                        editMessageCaption.caption(caption).parseMode(ParseMode.Markdown);
                         bot.execute(editMessageCaption);
                     }
                     if (callbackKeyboard != null) {
@@ -118,7 +127,7 @@ public class ViewMessage implements Runnable{
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaAudio(audio)));
                     if (caption != null) {
                         EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
-                        editMessageCaption.caption(caption);
+                        editMessageCaption.caption(caption).parseMode(ParseMode.Markdown);
                         bot.execute(editMessageCaption);
                     }
                     if (callbackKeyboard != null) {
@@ -136,7 +145,7 @@ public class ViewMessage implements Runnable{
                     bot.execute(new EditMessageMedia(chatId, Math.toIntExact(ViewMessageId), new InputMediaDocument(document)));
                     if (caption != null) {
                         EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, Math.toIntExact(ViewMessageId));
-                        editMessageCaption.caption(caption);
+                        editMessageCaption.caption(caption).parseMode(ParseMode.Markdown);
                         bot.execute(editMessageCaption);
                     }
                     if (callbackKeyboard != null) {
@@ -150,7 +159,7 @@ public class ViewMessage implements Runnable{
     }
 
     private void sendMedia(long chatId) {
-        if (caption == null){
+        if (caption == null && message == null){
             caption = "";
         }
         UserPojo userPojo = new UserPojo();
@@ -169,7 +178,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (image != null) {
-            SendPhoto sendPhoto = new SendPhoto(chatId, image).caption(caption).parseMode(ParseMode.MarkdownV2);
+            SendPhoto sendPhoto = new SendPhoto(chatId, image).caption(caption).parseMode(ParseMode.Markdown);
             if (callbackKeyboard != null) {
                 sendPhoto.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -177,7 +186,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (video != null) {
-            SendVideo sendVideo = new SendVideo(chatId, video).caption(caption).parseMode(ParseMode.MarkdownV2);
+            SendVideo sendVideo = new SendVideo(chatId, video).caption(caption).parseMode(ParseMode.Markdown);
             if (callbackKeyboard != null) {
                 sendVideo.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -185,7 +194,7 @@ public class ViewMessage implements Runnable{
         }
 
         if (audio != null) {
-            SendAudio sendAudio = new SendAudio(chatId, audio).caption(caption).parseMode(ParseMode.MarkdownV2);
+            SendAudio sendAudio = new SendAudio(chatId, audio).caption(caption).parseMode(ParseMode.Markdown);
             if (callbackKeyboard != null) {
                 sendAudio.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -206,20 +215,24 @@ public class ViewMessage implements Runnable{
             userPojo.setMessageIdsToDel(messageIds);
             if (callbackKeyboard != null) {
                 messageIds.add(messages[messageIds.size()-1].messageId()+1);
-                message = ".";
+                if ((message == null || message.isEmpty()) && caption == null) {
+                    message = ".";
+                } else if ((message == null || message.isEmpty())) {
+                    message = caption;
+                }
                 sendText(chatId);
             }else {
                 viewMessageId = messageIds.get(messageIds.size()-1);
             }
-            if (caption != null) {
+            if (caption != null && !caption.isEmpty() && caption.length()<=1024) {
                 EditMessageCaption editMessageCaption = new EditMessageCaption(chatId, messageIds.get(messageIds.size()-1));
-                editMessageCaption.caption(caption).parseMode(ParseMode.MarkdownV2);
+                editMessageCaption.caption(caption).parseMode(ParseMode.Markdown);
                 bot.execute(editMessageCaption);
             }
         }
 
         if (document != null) {
-            SendDocument sendDocument = new SendDocument(chatId, document).caption(caption).parseMode(ParseMode.MarkdownV2);
+            SendDocument sendDocument = new SendDocument(chatId, document).caption(caption).parseMode(ParseMode.Markdown);
             if (callbackKeyboard != null) {
                 sendDocument.replyMarkup(callbackKeyboard.getInlineKeyboard());
             }
@@ -236,7 +249,7 @@ public class ViewMessage implements Runnable{
         userPojo = userPojo.find();
         int viewMessageId = Math.toIntExact(userPojo.getViewMessageId());
         bot.execute(new DeleteMessage(chatId, Math.toIntExact(viewMessageId)));
-        SendMessage sendMessage = new SendMessage(chatId, message).parseMode(ParseMode.MarkdownV2);
+        SendMessage sendMessage = new SendMessage(chatId, message).parseMode(ParseMode.Markdown);
         if (callbackKeyboard != null) {
             sendMessage.replyMarkup(callbackKeyboard.getInlineKeyboard());
         }
