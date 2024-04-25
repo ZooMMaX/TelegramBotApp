@@ -22,3 +22,8 @@ add dependency
 	    <version>29e47b1710</version>
 	</dependency>
 ```
+
+for add inline button:
+1. callback - `any text`
+2. url - `http...`
+3. mini app - `mapphttp...`
