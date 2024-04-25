@@ -1,5 +1,6 @@
 package ru.zoommax.botapp.view;
 
+import com.pengrad.telegrambot.model.WebAppInfo;
 import com.pengrad.telegrambot.model.request.*;
 import lombok.Builder;
 import org.slf4j.Logger;
@@ -64,7 +65,13 @@ public class KeyboardMarkup {
             for (int i = 0; i < namesRow.size(); i++) {
                 List<InlineKeyboardButton> buttons = new ArrayList<>();
                 for (int j = 0; j < namesRow.get(i).size(); j++) {
-                    buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).callbackData(callbackDataRow.get(i).get(j)));
+                    if (callbackDataRow.get(i).get(j).startsWith("mapp")) {
+                        buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).webApp(new WebAppInfo(callbackDataRow.get(i).get(j).substring(4))));
+                    } else if (callbackDataRow.get(i).get(j).startsWith("http") || callbackDataRow.get(i).get(j).startsWith("tg")){
+                        buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).url(callbackDataRow.get(i).get(j)));
+                    }else {
+                        buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).callbackData(callbackDataRow.get(i).get(j)));
+                    }
                 }
                 markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
             }

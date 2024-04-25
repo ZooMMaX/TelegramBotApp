@@ -11,7 +11,6 @@ import ru.zoommax.botapp.db.pojo.UserPojo;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static ru.zoommax.botapp.BotApp.bot;

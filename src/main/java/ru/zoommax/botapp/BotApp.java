@@ -98,7 +98,7 @@ public class BotApp implements Runnable {
                     userPojo.setLastMessageId(lastMessageId);
                     try {
                         userPojo.setViewMessageId(bot.execute(new SendMessage(chatId, "Bot starting...")).message().messageId());
-                    }catch (NullPointerException e){
+                    }catch (Exception e){
                         logger.error(Arrays.toString(e.getStackTrace()));
                     }
                     userPojo.setMessageType(MessageType.TEXT);
