@@ -4,10 +4,9 @@ import com.pengrad.telegrambot.model.WebAppInfo;
 import com.pengrad.telegrambot.model.request.*;
 import lombok.Builder;
 import org.slf4j.Logger;
+import ru.zoommax.botapp.BotApp;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,13 +43,13 @@ public class KeyboardMarkup {
         List<List<List<String>>> namesRow4 = new ArrayList<>();
         List<List<List<String>>> callbackDataRow4 = new ArrayList<>();
 
-        for (int i = 0; i < names.size(); i += 4) {
-            namesRow4.add(names.subList(i, Math.min(i + 4, names.size())));
+        for (int i = 0; i < names.size(); i += BotApp.ButtonsRows) {
+            namesRow4.add(names.subList(i, Math.min(i + BotApp.ButtonsRows, names.size())));
         }
 
 
-        for (int i = 0; i < callbackData.size(); i += 4) {
-            callbackDataRow4.add(callbackData.subList(i, Math.min(i + 4, callbackData.size())));
+        for (int i = 0; i < callbackData.size(); i += BotApp.ButtonsRows) {
+            callbackDataRow4.add(callbackData.subList(i, Math.min(i + BotApp.ButtonsRows, callbackData.size())));
         }
 
         List<InlineKeyboardMarkup> markups = new ArrayList<>();
@@ -75,26 +74,33 @@ public class KeyboardMarkup {
                 }
                 markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
             }
-            InlineKeyboardButton buttonNext;
+            InlineKeyboardButton buttonNext = null;
             if (x+1 < namesRow4.size()) {
                 buttonNext = new InlineKeyboardButton("→").callbackData("nextButton:" + x);
-            }else {
+            }/*else {
                 buttonNext = new InlineKeyboardButton("→✖").callbackData("zero");
-            }
-            InlineKeyboardButton buttonPrev;
+            }*/
+            InlineKeyboardButton buttonPrev = null;
             if (x > 0) {
                 buttonPrev = new InlineKeyboardButton("←").callbackData("prevButton:" + x);
-            }else {
+            }/*else {
                 buttonPrev = new InlineKeyboardButton("✖←").callbackData("zero");
+            }*/
+
+            if (buttonNext != null && buttonPrev != null) {
+                markup.addRow(buttonPrev, buttonNext);
+            } else if (buttonNext != null) {
+                markup.addRow(buttonNext);
+            } else if (buttonPrev != null) {
+                markup.addRow(buttonPrev);
             }
-            markup.addRow(buttonPrev, buttonNext);
             markups.add(markup);
         }
         KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.put(String.valueOf(chatId), markups);
         UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
-        HashMap<String, List<byte[]>> markupsSerialized = new HashMap<>();
+        HashMap<String, List<String>> markupsSerialized = new HashMap<>();
         for (String keySet : KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.keySet()) {
-            List<byte[]> markupSerialized = new ArrayList<>();
+            /*List<byte[]> markupSerialized = new ArrayList<>();
             for (InlineKeyboardMarkup markup : KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(keySet))) {
                 try {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -105,10 +111,22 @@ public class KeyboardMarkup {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }*/
+            List<String> markupSerialized = new ArrayList<>();
+            for (InlineKeyboardMarkup markup : KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(keySet))) {
+                int rows = markup.inlineKeyboard().length;
+                for (int i = 0; i < rows; i++) {
+                    StringBuilder sb = new StringBuilder();
+                    for (InlineKeyboardButton button : markup.inlineKeyboard()[i]) {
+                        sb.append(button.text()).append(":").append(button.callbackData()).append(";");
+                    }
+                    markupSerialized.add(sb.toString());
+                }
             }
             markupsSerialized.put(keySet, markupSerialized);
         }
-        userMarkupsPojo.setMarkups(markupsSerialized);
+        userMarkupsPojo.setTg_id(String.valueOf(chatId));
+        userMarkupsPojo.setButtons(markupsSerialized);
         userMarkupsPojo.insert();
         return markups.get(0);
     }

@@ -2,13 +2,9 @@ package ru.zoommax.botapp;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
-import com.pengrad.telegrambot.impl.UpdatesHandler;
-import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
-import com.pengrad.telegrambot.request.EditMessageReplyMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
@@ -18,9 +14,6 @@ import ru.zoommax.botapp.view.KeyboardMarkup;
 import ru.zoommax.botapp.view.KeyboardMarkupsArrays;
 import ru.zoommax.botapp.view.ViewMessage;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +24,7 @@ import java.util.concurrent.Executors;
 public class BotApp implements Runnable {
 
     public static TelegramBot bot;
+    public static int ButtonsRows = 4;
     private final Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
@@ -38,13 +32,19 @@ public class BotApp implements Runnable {
         bot = new TelegramBot(token);
         this.listener = listener;
     }
+
+    public BotApp(String token, Listener listener, int ButtonsRows) {
+        bot = new TelegramBot(token);
+        this.listener = listener;
+        BotApp.ButtonsRows = ButtonsRows;
+    }
     @Override
     public void run() {
         Logger logger = org.slf4j.LoggerFactory.getLogger(BotApp.class);
         UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
         userMarkupsPojo = userMarkupsPojo.find();
         if (userMarkupsPojo != null) {
-            HashMap<String, List<byte[]>> markups = userMarkupsPojo.getMarkups();
+            /*HashMap<String, List<byte[]>> markups = userMarkupsPojo.getMarkups();
             HashMap<String, List<InlineKeyboardMarkup>> userKeyboardMarkups = new HashMap<>();
             for (String chatId : markups.keySet()) {
                 List<InlineKeyboardMarkup> inlineKeyboardMarkups = new ArrayList<>();
@@ -59,12 +59,27 @@ public class BotApp implements Runnable {
                     }
                 }
                 userKeyboardMarkups.put(chatId, inlineKeyboardMarkups);
+            }*/
+            HashMap<String, List<String>> markups = userMarkupsPojo.getButtons();
+            HashMap<String, List<InlineKeyboardMarkup>> userKeyboardMarkups = new HashMap<>();
+            for (String chatId : markups.keySet()) {
+                List<InlineKeyboardMarkup> inlineKeyboardMarkups = new ArrayList<>();
+                for (String markup : markups.get(chatId)) {
+                    String[] buttons = markup.split(";");
+                    InlineKeyboardButton[] inlineKeyboardButton = new InlineKeyboardButton[buttons.length];
+                    for (int i = 0; i < buttons.length; i++) {
+                        inlineKeyboardButton[i] = new InlineKeyboardButton(buttons[i].split(":")[0]).callbackData(buttons[i].split(":")[1]);
+
+                        inlineKeyboardMarkups.add(new InlineKeyboardMarkup(inlineKeyboardButton));
+                    }
+                }
+                userKeyboardMarkups.put(chatId, inlineKeyboardMarkups);
             }
             KeyboardMarkupsArrays.getInstance().userKeyboardMarkups = userKeyboardMarkups;
         }else {
             userMarkupsPojo = new UserMarkupsPojo();
-            HashMap<String, List<byte[]>> markups = new HashMap<>();
-            userMarkupsPojo.setMarkups(markups);
+            HashMap<String, List<String>> markups = new HashMap<>();
+            userMarkupsPojo.setButtons(markups);
             userMarkupsPojo.insert();
         }
         bot.setUpdatesListener(updates -> {

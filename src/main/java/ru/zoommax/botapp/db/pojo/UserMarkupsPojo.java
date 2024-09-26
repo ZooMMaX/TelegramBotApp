@@ -16,10 +16,11 @@ import static com.mongodb.client.model.Filters.eq;
 public class UserMarkupsPojo extends MongoDBConnector {
     @Getter
     @Setter
-    private HashMap<String, List<byte[]>> markups;
+    private String tg_id;
 
     @Getter
-    private int uid = 1;
+    @Setter
+    private HashMap<String, List<String>> buttons;
 
     public UserMarkupsPojo() {
     }
@@ -30,7 +31,7 @@ public class UserMarkupsPojo extends MongoDBConnector {
     }
 
     private boolean exist() {
-        return collection().find(eq("uid", this.markups)).first() != null;
+        return collection().find(eq("tg_id", this.tg_id)).first() != null;
     }
 
     public boolean insert() {
@@ -42,16 +43,16 @@ public class UserMarkupsPojo extends MongoDBConnector {
     }
 
     private boolean update() {
-        final String result = collection().replaceOne(eq("uid", this.uid), this).toString();
+        final String result = collection().replaceOne(eq("tg_id", this.tg_id), this).toString();
         return result.contains("matchedCount=1");
     }
 
     public boolean delete() {
-        final String result = collection().deleteOne(eq("markups", this.markups)).toString();
+        final String result = collection().deleteOne(eq("tg_id", this.tg_id)).toString();
         return result.contains("deletedCount=1");
     }
 
     public UserMarkupsPojo find() {
-        return collection().find(eq("uid", this.uid)).first();
+        return collection().find(eq("tg_id", this.tg_id)).first();
     }
 }
