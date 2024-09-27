@@ -23,6 +23,8 @@ public class ViewMessage implements Runnable{
     private String message;
     private final long chatId;
     private KeyboardMarkup callbackKeyboard;
+    private InlineKeyboardMarkup inlineKeyboard;
+    private KBUnsafe kbUnsafe;
     private File image;
     private List<File> images;
     private File video;
@@ -33,6 +35,13 @@ public class ViewMessage implements Runnable{
 
     @Override
     public void run() {
+        if (inlineKeyboard == null){
+            if (kbUnsafe != null) {
+                inlineKeyboard = kbUnsafe.getInlineKeyboard();
+            } else if (callbackKeyboard != null) {
+                inlineKeyboard = callbackKeyboard.getInlineKeyboard();
+            }
+        }
         Logger logger = LoggerFactory.getLogger(ViewMessage.class);
         if (caption != null && caption.length() > 1024) {
             message = caption;
@@ -64,7 +73,7 @@ public class ViewMessage implements Runnable{
 
         if (image == null && video == null && audio == null && message == null && caption == null && images == null && document == null) {
             EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-            e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+            e.replyMarkup(inlineKeyboard);
             bot.execute(e);
         } else {
 
@@ -79,7 +88,7 @@ public class ViewMessage implements Runnable{
 
                 if (callbackKeyboard != null) {
                     EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-                    e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                    e.replyMarkup(inlineKeyboard);
                     bot.execute(e);
                 }
             }
@@ -107,7 +116,7 @@ public class ViewMessage implements Runnable{
                     }
                     if (callbackKeyboard != null) {
                         EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        e.replyMarkup(inlineKeyboard);
                         bot.execute(e);
                     }
                 }
@@ -122,7 +131,7 @@ public class ViewMessage implements Runnable{
                     }
                     if (callbackKeyboard != null) {
                         EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        e.replyMarkup(inlineKeyboard);
                         bot.execute(e);
                     }
                 }
@@ -136,7 +145,7 @@ public class ViewMessage implements Runnable{
                     }
                     if (callbackKeyboard != null) {
                         EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        e.replyMarkup(inlineKeyboard);
                         bot.execute(e);
                     }
                 }
@@ -154,7 +163,7 @@ public class ViewMessage implements Runnable{
                     }
                     if (callbackKeyboard != null) {
                         EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(ViewMessageId));
-                        e.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                        e.replyMarkup(inlineKeyboard);
                         bot.execute(e);
                     }
                 }
@@ -184,7 +193,7 @@ public class ViewMessage implements Runnable{
         if (image != null) {
             SendPhoto sendPhoto = new SendPhoto(chatId, image).caption(caption).parseMode(ParseMode.HTML);
             if (callbackKeyboard != null) {
-                sendPhoto.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                sendPhoto.replyMarkup(inlineKeyboard);
             }
             viewMessageId = bot.execute(sendPhoto).message().messageId();
         }
@@ -192,7 +201,7 @@ public class ViewMessage implements Runnable{
         if (video != null) {
             SendVideo sendVideo = new SendVideo(chatId, video).caption(caption).parseMode(ParseMode.HTML);
             if (callbackKeyboard != null) {
-                sendVideo.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                sendVideo.replyMarkup(inlineKeyboard);
             }
             viewMessageId = bot.execute(sendVideo).message().messageId();
         }
@@ -200,7 +209,7 @@ public class ViewMessage implements Runnable{
         if (audio != null) {
             SendAudio sendAudio = new SendAudio(chatId, audio).caption(caption).parseMode(ParseMode.HTML);
             if (callbackKeyboard != null) {
-                sendAudio.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                sendAudio.replyMarkup(inlineKeyboard);
             }
             viewMessageId = bot.execute(sendAudio).message().messageId();
         }
@@ -240,7 +249,7 @@ public class ViewMessage implements Runnable{
         if (document != null) {
             SendDocument sendDocument = new SendDocument(chatId, document).caption(caption).parseMode(ParseMode.HTML);
             if (callbackKeyboard != null) {
-                sendDocument.replyMarkup(callbackKeyboard.getInlineKeyboard());
+                sendDocument.replyMarkup(inlineKeyboard);
             }
             viewMessageId = bot.execute(sendDocument).message().messageId();
         }
@@ -257,7 +266,7 @@ public class ViewMessage implements Runnable{
         bot.execute(new DeleteMessage(chatId, Math.toIntExact(viewMessageId)));
         SendMessage sendMessage = new SendMessage(chatId, message).parseMode(ParseMode.HTML);
         if (callbackKeyboard != null) {
-            sendMessage.replyMarkup(callbackKeyboard.getInlineKeyboard());
+            sendMessage.replyMarkup(inlineKeyboard);
         }
         viewMessageId = bot.execute(sendMessage).message().messageId();
         userPojo.setViewMessageId(viewMessageId);

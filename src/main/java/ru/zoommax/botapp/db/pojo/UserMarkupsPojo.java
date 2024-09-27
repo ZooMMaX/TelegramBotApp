@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import lombok.Getter;
 import lombok.Setter;
 import ru.zoommax.MongoDBConnector;
+import ru.zoommax.botapp.view.Pages;
 
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ public class UserMarkupsPojo extends MongoDBConnector {
 
     @Getter
     @Setter
-    private HashMap<String, List<String>> buttons;
+    private List<Pages> pages;
 
     public UserMarkupsPojo() {
     }

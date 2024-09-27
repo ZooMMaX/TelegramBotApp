@@ -10,8 +10,9 @@ import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
+import ru.zoommax.botapp.view.KBUnsafe;
 import ru.zoommax.botapp.view.KeyboardMarkup;
-import ru.zoommax.botapp.view.KeyboardMarkupsArrays;
+import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
 import java.util.ArrayList;
@@ -41,47 +42,6 @@ public class BotApp implements Runnable {
     @Override
     public void run() {
         Logger logger = org.slf4j.LoggerFactory.getLogger(BotApp.class);
-        UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
-        userMarkupsPojo = userMarkupsPojo.find();
-        if (userMarkupsPojo != null) {
-            /*HashMap<String, List<byte[]>> markups = userMarkupsPojo.getMarkups();
-            HashMap<String, List<InlineKeyboardMarkup>> userKeyboardMarkups = new HashMap<>();
-            for (String chatId : markups.keySet()) {
-                List<InlineKeyboardMarkup> inlineKeyboardMarkups = new ArrayList<>();
-                for (byte[] markup : markups.get(chatId)) {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(markup);
-                    ObjectInputStream ois = null;
-                    try {
-                        ois = new ObjectInputStream(bais);
-                        inlineKeyboardMarkups.add((InlineKeyboardMarkup) ois.readObject());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                userKeyboardMarkups.put(chatId, inlineKeyboardMarkups);
-            }*/
-            HashMap<String, List<String>> markups = userMarkupsPojo.getButtons();
-            HashMap<String, List<InlineKeyboardMarkup>> userKeyboardMarkups = new HashMap<>();
-            for (String chatId : markups.keySet()) {
-                List<InlineKeyboardMarkup> inlineKeyboardMarkups = new ArrayList<>();
-                for (String markup : markups.get(chatId)) {
-                    String[] buttons = markup.split(";");
-                    InlineKeyboardButton[] inlineKeyboardButton = new InlineKeyboardButton[buttons.length];
-                    for (int i = 0; i < buttons.length; i++) {
-                        inlineKeyboardButton[i] = new InlineKeyboardButton(buttons[i].split(":")[0]).callbackData(buttons[i].split(":")[1]);
-
-                        inlineKeyboardMarkups.add(new InlineKeyboardMarkup(inlineKeyboardButton));
-                    }
-                }
-                userKeyboardMarkups.put(chatId, inlineKeyboardMarkups);
-            }
-            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups = userKeyboardMarkups;
-        }else {
-            userMarkupsPojo = new UserMarkupsPojo();
-            HashMap<String, List<String>> markups = new HashMap<>();
-            userMarkupsPojo.setButtons(markups);
-            userMarkupsPojo.insert();
-        }
         bot.setUpdatesListener(updates -> {
             // ... process updates
             // return id of last processed update or confirm them all
@@ -155,33 +115,44 @@ public class BotApp implements Runnable {
 
                 if (update.callbackQuery() != null) {
                     if (update.callbackQuery().data().contains("nextButton")){
-                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
-                        try{
-                            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage+1);
-                        }catch (Exception e){
-                            logger.error(e.getMessage(), e);
-                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-                        }
-                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage+1);
-                        if (inlineKeyboardMarkup != null) {
-                            viewMessage = ViewMessage.builder().callbackKeyboard(KeyboardMarkup.builder().inlineKeyboard(inlineKeyboardMarkup).chatId(chatId).build()).chatId(chatId).build();
-                        }else {
-                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-                        }
+                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1])+1;
+                        UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
+                        userMarkupsPojo.setTg_id(chatId+"");
+                        userMarkupsPojo = userMarkupsPojo.find();
+
+                        List<Pages> pages = userMarkupsPojo.getPages();
+                        Pages page = pages.get(keysPage);
+
+                        KBUnsafe keyboardMarkup = KBUnsafe.builder()
+                                .chatId(chatId)
+                                .buttonsNames(page.getButtonsNames())
+                                .buttonsCallbackData(page.getButtonsCallbacksData())
+                                .build();
+
+                        viewMessage = ViewMessage.builder()
+                                .chatId(chatId)
+                                .kbUnsafe(keyboardMarkup)
+                                .build();
                     } else if (update.callbackQuery().data().contains("prevButton")){
-                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1]);
-                        try{
-                            KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage-1);
-                        }catch (Exception e){
-                            logger.error(e.getMessage(), e);
-                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-                        }
-                        InlineKeyboardMarkup inlineKeyboardMarkup = KeyboardMarkupsArrays.getInstance().userKeyboardMarkups.get(String.valueOf(chatId)).get(keysPage-1);
-                        if (inlineKeyboardMarkup != null) {
-                            viewMessage = ViewMessage.builder().callbackKeyboard(KeyboardMarkup.builder().inlineKeyboard(inlineKeyboardMarkup).chatId(chatId).build()).chatId(chatId).build();
-                        }else {
-                            return UpdatesListener.CONFIRMED_UPDATES_ALL;
-                        }
+                        int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1])-1;
+                        UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
+                        userMarkupsPojo.setTg_id(chatId+"");
+                        userMarkupsPojo = userMarkupsPojo.find();
+
+                        List<Pages> pages = userMarkupsPojo.getPages();
+                        Pages page = pages.get(keysPage);
+
+                        KBUnsafe keyboardMarkup = KBUnsafe.builder()
+                                .chatId(chatId)
+                                .buttonsNames(page.getButtonsNames())
+                                .buttonsCallbackData(page.getButtonsCallbacksData())
+                                .build();
+
+                        viewMessage = ViewMessage.builder()
+                                .chatId(chatId)
+                                .kbUnsafe(keyboardMarkup)
+                                .build();
+
                     } else {
                         viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
                     }
