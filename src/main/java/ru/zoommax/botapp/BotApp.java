@@ -3,21 +3,16 @@ package ru.zoommax.botapp;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
-import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
 import ru.zoommax.botapp.view.KBUnsafe;
-import ru.zoommax.botapp.view.KeyboardMarkup;
 import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -93,13 +88,13 @@ public class BotApp implements Runnable {
                 if (update.message() != null) {
                     if (update.message().photo() != null) {
                         viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
-                    }else if (update.message().text() != null){
-                        if(update.message().text().startsWith("/")) {
+                    } else if (update.message().text() != null) {
+                        if (update.message().text().startsWith("/")) {
                             if (update.message().text().equals("/start")) {
                                 long msgId = 0;
                                 try {
                                     msgId = bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId();
-                                }catch (NullPointerException e){
+                                } catch (NullPointerException e) {
                                     e.printStackTrace();
                                     msgId = 0;
                                 }
@@ -107,7 +102,7 @@ public class BotApp implements Runnable {
                                 userPojo.insert();
                             }
                             viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
-                        }else {
+                        } else {
                             viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                         }
                     }
