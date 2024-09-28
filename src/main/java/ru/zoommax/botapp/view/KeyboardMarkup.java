@@ -14,6 +14,7 @@ import java.util.List;
 
 @Builder
 public class KeyboardMarkup {
+    String langNextPrevButtons;
     String buttonsNames;
     String buttonsCallbackData;
     InlineKeyboardMarkup inlineKeyboard;
@@ -21,6 +22,9 @@ public class KeyboardMarkup {
     Logger logger = org.slf4j.LoggerFactory.getLogger(KeyboardMarkup.class);
 
     public InlineKeyboardMarkup getInlineKeyboard() {
+        if (langNextPrevButtons == null) {
+            langNextPrevButtons = "default";
+        }
 
         if (inlineKeyboard != null) {
             return inlineKeyboard;
@@ -76,13 +80,13 @@ public class KeyboardMarkup {
             }
             InlineKeyboardButton buttonNext = null;
             if (x+1 < namesRow4.size()) {
-                buttonNext = new InlineKeyboardButton("→").callbackData("nextButton:" + x);
+                buttonNext = new InlineKeyboardButton(BotApp.nextBtn.get(langNextPrevButtons)).callbackData("nextButton:" + x);
             }/*else {
                 buttonNext = new InlineKeyboardButton("→✖").callbackData("zero");
             }*/
             InlineKeyboardButton buttonPrev = null;
             if (x > 0) {
-                buttonPrev = new InlineKeyboardButton("←").callbackData("prevButton:" + x);
+                buttonPrev = new InlineKeyboardButton(BotApp.prevBtn.get(langNextPrevButtons)).callbackData("prevButton:" + x);
             }/*else {
                 buttonPrev = new InlineKeyboardButton("✖←").callbackData("zero");
             }*/

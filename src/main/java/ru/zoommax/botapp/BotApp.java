@@ -13,6 +13,7 @@ import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,15 +22,21 @@ public class BotApp implements Runnable {
 
     public static TelegramBot bot;
     public static int ButtonsRows = 4;
+    public static HashMap<String, String> nextBtn = new HashMap<>();//"➡️";
+    public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private final Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public BotApp(String token, Listener listener) {
+        nextBtn.put("default", "➡️");
+        prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
         this.listener = listener;
     }
 
     public BotApp(String token, Listener listener, int ButtonsRows) {
+        nextBtn.put("default", "➡️");
+        prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
         this.listener = listener;
         BotApp.ButtonsRows = ButtonsRows;
