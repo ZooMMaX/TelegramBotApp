@@ -26,7 +26,7 @@ public class BotApp implements Runnable {
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    private List<Listener> listeners;
+    public static List<Listener> listeners;
 
 
 
