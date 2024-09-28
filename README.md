@@ -19,7 +19,7 @@ add dependency
 	<dependency>
 	    <groupId>com.github.ZooMMaX</groupId>
 	    <artifactId>TelegramBotApp</artifactId>
-	    <version>29e47b1710</version>
+	    <version>1.5-SNAPSHOT</version>
 	</dependency>
 ```
 
