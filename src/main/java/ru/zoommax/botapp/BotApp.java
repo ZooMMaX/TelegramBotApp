@@ -17,10 +17,7 @@ import ru.zoommax.botapp.view.KBUnsafe;
 import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,7 +29,7 @@ public class BotApp implements Runnable {
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    public static List<Listener> listeners;
+    public static List<Listener> listeners = new ArrayList<>();
 
 
 
