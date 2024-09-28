@@ -4,10 +4,15 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
+import org.reflections.Reflections;
+import org.reflections.scanners.Scanners;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
+import ru.zoommax.botapp.utils.ViewMessageListener;
 import ru.zoommax.botapp.view.KBUnsafe;
 import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
@@ -15,6 +20,7 @@ import ru.zoommax.botapp.view.ViewMessage;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,6 +56,16 @@ public class BotApp implements Runnable {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
+                .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
+        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
+        for (Class<?> clazz : annotated) {
+            if (clazz.isAnnotationPresent(ViewMessageListener.class)) {
+                ViewMessageListener vml = clazz.getAnnotation(ViewMessageListener.class);
+                listeners.add((Listener) vml);
+            }
+        }
     }
 
     public BotApp(String token, int ButtonsRows) {
@@ -57,6 +73,16 @@ public class BotApp implements Runnable {
         prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
         BotApp.ButtonsRows = ButtonsRows;
+        Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
+                .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
+        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
+        for (Class<?> clazz : annotated) {
+            if (clazz.isAnnotationPresent(ViewMessageListener.class)) {
+                ViewMessageListener vml = clazz.getAnnotation(ViewMessageListener.class);
+                listeners.add((Listener) vml);
+            }
+        }
     }
     @Override
     public void run() {
