@@ -46,18 +46,16 @@ public class BotApp implements Runnable {
         BotApp.ButtonsRows = ButtonsRows;
     }
 
-    public BotApp(String token, List<Listener> listeners) {
+    public BotApp(String token) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
-        this.listeners = listeners;
     }
 
-    public BotApp(String token, List<Listener> listeners, int ButtonsRows) {
+    public BotApp(String token, int ButtonsRows) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
-        this.listeners = listeners;
         BotApp.ButtonsRows = ButtonsRows;
     }
     @Override
