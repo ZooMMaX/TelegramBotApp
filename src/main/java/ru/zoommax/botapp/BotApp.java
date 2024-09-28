@@ -24,8 +24,12 @@ public class BotApp implements Runnable {
     public static int ButtonsRows = 4;
     public static HashMap<String, String> nextBtn = new HashMap<>();//"➡️";
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
-    private final Listener listener;
+    private Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private List<Listener> listeners;
+
+
+
 
     public BotApp(String token, Listener listener) {
         nextBtn.put("default", "➡️");
@@ -39,6 +43,21 @@ public class BotApp implements Runnable {
         prevBtn.put("default", "⬅️");
         bot = new TelegramBot(token);
         this.listener = listener;
+        BotApp.ButtonsRows = ButtonsRows;
+    }
+
+    public BotApp(String token, List<Listener> listeners) {
+        nextBtn.put("default", "➡️");
+        prevBtn.put("default", "⬅️");
+        bot = new TelegramBot(token);
+        this.listeners = listeners;
+    }
+
+    public BotApp(String token, List<Listener> listeners, int ButtonsRows) {
+        nextBtn.put("default", "➡️");
+        prevBtn.put("default", "⬅️");
+        bot = new TelegramBot(token);
+        this.listeners = listeners;
         BotApp.ButtonsRows = ButtonsRows;
     }
     @Override
@@ -94,7 +113,14 @@ public class BotApp implements Runnable {
                 ViewMessage viewMessage = null;
                 if (update.message() != null) {
                     if (update.message().photo() != null) {
-                        viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                        if (listener != null) {
+                            viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                        }
+                        if (listeners != null) {
+                            for (Listener listener : listeners) {
+                                viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                            }
+                        }
                     } else if (update.message().text() != null) {
                         if (update.message().text().startsWith("/")) {
                             if (update.message().text().equals("/start")) {
@@ -108,9 +134,23 @@ public class BotApp implements Runnable {
                                 userPojo.setViewMessageId(msgId);
                                 userPojo.insert();
                             }
-                            viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            if (listeners != null) {
+                                for (Listener listener : listeners) {
+                                    viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                }
+                            }
+                            if (listener != null) {
+                                viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            }
                         } else {
-                            viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            if (listeners != null) {
+                                for (Listener listener : listeners) {
+                                    viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                }
+                            }
+                            if (listener != null) {
+                                viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            }
                         }
                     }
                 }
@@ -156,14 +196,35 @@ public class BotApp implements Runnable {
                                 .build();
 
                     } else {
-                        viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                        if (listeners != null) {
+                            for (Listener listener : listeners) {
+                                viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                            }
+                        }
+                        if (listener != null) {
+                            viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                        }
                     }
                 }
                 if (update.inlineQuery() != null) {
-                    viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                    if (listeners != null) {
+                        for (Listener listener : listeners) {
+                            viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                        }
+                    }
+                    if (listener != null) {
+                        viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                    }
                 }
                 if (update.chosenInlineResult() != null) {
-                    viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                    if (listeners != null) {
+                        for (Listener listener : listeners) {
+                            viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                        }
+                    }
+                    if (listener != null) {
+                        viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                    }
                 }
                 if (viewMessage == null) {
                     return UpdatesListener.CONFIRMED_UPDATES_ALL;
