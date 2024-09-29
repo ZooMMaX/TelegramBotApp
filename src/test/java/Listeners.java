@@ -7,6 +7,7 @@ import ru.zoommax.botapp.view.KeyboardMarkup;
 import ru.zoommax.botapp.view.ViewMessage;
 
 import java.io.File;
+import java.lang.annotation.Annotation;
 
 import static ru.zoommax.botapp.BotApp.bot;
 

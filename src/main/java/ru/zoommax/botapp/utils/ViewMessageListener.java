@@ -1,7 +1,5 @@
 package ru.zoommax.botapp.utils;
 
-import ru.zoommax.botapp.Listener;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

@@ -2,6 +2,7 @@ package ru.zoommax.botapp;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
+import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.reflections.Reflections;
@@ -9,34 +10,39 @@ import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.zoommax.botapp.db.pojo.MessageType;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
+import ru.zoommax.botapp.utils.VML;
 import ru.zoommax.botapp.utils.ViewMessageListener;
 import ru.zoommax.botapp.view.KBUnsafe;
 import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BotApp implements Runnable {
-
+    public static String defaultErrorMessage;
     public static TelegramBot bot;
     public static int ButtonsRows = 4;
     public static HashMap<String, String> nextBtn = new HashMap<>();//"➡️";
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private Listener listener;
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-    public static List<Listener> listeners = new ArrayList<>();
-
-
-
+    private Reflections reflections = new Reflections(new ConfigurationBuilder()
+                .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
+                .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
+    Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
 
     public BotApp(String token, Listener listener) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
+        defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         this.listener = listener;
     }
@@ -44,6 +50,7 @@ public class BotApp implements Runnable {
     public BotApp(String token, Listener listener, int ButtonsRows) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
+        defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         this.listener = listener;
         BotApp.ButtonsRows = ButtonsRows;
@@ -52,34 +59,16 @@ public class BotApp implements Runnable {
     public BotApp(String token) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
+        defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
-                .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
-        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
-        for (Class<?> clazz : annotated) {
-            if (clazz.isAnnotationPresent(ViewMessageListener.class)) {
-                ViewMessageListener vml = clazz.getAnnotation(ViewMessageListener.class);
-                listeners.add((Listener) vml);
-            }
-        }
     }
 
     public BotApp(String token, int ButtonsRows) {
         nextBtn.put("default", "➡️");
         prevBtn.put("default", "⬅️");
+        defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         BotApp.ButtonsRows = ButtonsRows;
-        Reflections reflections = new Reflections(new ConfigurationBuilder()
-                .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
-                .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
-        Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
-        for (Class<?> clazz : annotated) {
-            if (clazz.isAnnotationPresent(ViewMessageListener.class)) {
-                ViewMessageListener vml = clazz.getAnnotation(ViewMessageListener.class);
-                listeners.add((Listener) vml);
-            }
-        }
     }
     @Override
     public void run() {
@@ -137,9 +126,16 @@ public class BotApp implements Runnable {
                         if (listener != null) {
                             viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
                         }
-                        if (listeners != null) {
-                            for (Listener listener : listeners) {
-                                viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                        if (annotated != null) {
+                            for (Class<?> listener : annotated) {
+                                //viewMessage = listener.onPicture(update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                                try {
+                                    Method method = listener.getMethod("onPicture", PhotoSize[].class, String.class, int.class, long.class, Update.class);
+                                    viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().photo(), update.message().caption(), update.message().messageId(), update.message().chat().id(), update);
+                                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                         NoSuchMethodException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         }
                     } else if (update.message().text() != null) {
@@ -155,18 +151,32 @@ public class BotApp implements Runnable {
                                 userPojo.setViewMessageId(msgId);
                                 userPojo.insert();
                             }
-                            if (listeners != null) {
-                                for (Listener listener : listeners) {
-                                    viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            if (annotated != null) {
+                                for (Class<?> listener : annotated) {
+                                    //viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                    try {
+                                        Method method = listener.getMethod("onCommand", String.class, int.class, long.class, Update.class);
+                                        viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                             NoSuchMethodException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                             }
                             if (listener != null) {
                                 viewMessage = listener.onCommand(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                             }
                         } else {
-                            if (listeners != null) {
-                                for (Listener listener : listeners) {
-                                    viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                            if (annotated != null) {
+                                for (Class<?> listener : annotated) {
+                                    //viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                    try {
+                                        Method method = listener.getMethod("onMessage", String.class, int.class, long.class, Update.class);
+                                        viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                             NoSuchMethodException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                             }
                             if (listener != null) {
@@ -217,9 +227,16 @@ public class BotApp implements Runnable {
                                 .build();
 
                     } else {
-                        if (listeners != null) {
-                            for (Listener listener : listeners) {
-                                viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                        if (annotated != null) {
+                            for (Class<?> listener : annotated) {
+                                //viewMessage = listener.onCallbackQuery(update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                                try {
+                                    Method method = listener.getMethod("onCallbackQuery", String.class, int.class, long.class, Update.class);
+                                    viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                                } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                         NoSuchMethodException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         }
                         if (listener != null) {
@@ -228,9 +245,16 @@ public class BotApp implements Runnable {
                     }
                 }
                 if (update.inlineQuery() != null) {
-                    if (listeners != null) {
-                        for (Listener listener : listeners) {
-                            viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                    if (annotated != null) {
+                        for (Class<?> listener : annotated) {
+                            //viewMessage = listener.onInlineQuery(update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                            try {
+                                Method method = listener.getMethod("onInlineQuery", String.class, String.class, long.class, Update.class);
+                                viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                     NoSuchMethodException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                     if (listener != null) {
@@ -238,9 +262,16 @@ public class BotApp implements Runnable {
                     }
                 }
                 if (update.chosenInlineResult() != null) {
-                    if (listeners != null) {
-                        for (Listener listener : listeners) {
-                            viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                    if (annotated != null) {
+                        for (Class<?> listener : annotated) {
+                            //viewMessage = listener.onChosenInlineResult(update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                            try {
+                                Method method = listener.getMethod("onChosenInlineResult", String.class, long.class, String.class, Update.class);
+                                viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                     NoSuchMethodException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                     if (listener != null) {
