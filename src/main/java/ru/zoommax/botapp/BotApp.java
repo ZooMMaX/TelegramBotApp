@@ -157,6 +157,9 @@ public class BotApp implements Runnable {
                                     try {
                                         Method method = listener.getMethod("onCommand", String.class, int.class, long.class, Update.class);
                                         viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                        if (viewMessage != null) {
+                                            break;
+                                        }
                                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                              NoSuchMethodException e) {
                                         throw new RuntimeException(e);
@@ -173,6 +176,9 @@ public class BotApp implements Runnable {
                                     try {
                                         Method method = listener.getMethod("onMessage", String.class, int.class, long.class, Update.class);
                                         viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                        if (viewMessage != null) {
+                                            break;
+                                        }
                                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                              NoSuchMethodException e) {
                                         throw new RuntimeException(e);
@@ -233,6 +239,9 @@ public class BotApp implements Runnable {
                                 try {
                                     Method method = listener.getMethod("onCallbackQuery", String.class, int.class, long.class, Update.class);
                                     viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.callbackQuery().data(), update.callbackQuery().message().messageId(), update.callbackQuery().message().chat().id(), update);
+                                    if (viewMessage != null) {
+                                        break;
+                                    }
                                 } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                          NoSuchMethodException e) {
                                     throw new RuntimeException(e);
@@ -251,6 +260,9 @@ public class BotApp implements Runnable {
                             try {
                                 Method method = listener.getMethod("onInlineQuery", String.class, String.class, long.class, Update.class);
                                 viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.inlineQuery().query(), update.inlineQuery().id(), update.inlineQuery().from().id(), update);
+                                if (viewMessage != null) {
+                                    break;
+                                }
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException e) {
                                 throw new RuntimeException(e);
@@ -268,6 +280,9 @@ public class BotApp implements Runnable {
                             try {
                                 Method method = listener.getMethod("onChosenInlineResult", String.class, long.class, String.class, Update.class);
                                 viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.chosenInlineResult().resultId(), update.chosenInlineResult().from().id(), update.chosenInlineResult().query(), update);
+                                if (viewMessage != null) {
+                                    break;
+                                }
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException e) {
                                 throw new RuntimeException(e);
