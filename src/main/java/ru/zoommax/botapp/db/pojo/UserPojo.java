@@ -30,6 +30,9 @@ public class UserPojo extends MongoDBConnector {
     @Getter
     @Setter
     private List<Integer> messageIdsToDel;
+    @Getter
+    @Setter
+    private long notificationMessageId;
 
     public UserPojo(){}
 

@@ -4,6 +4,7 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.request.DeleteMessages;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
@@ -102,11 +103,7 @@ public class BotApp implements Runnable {
                     userPojo = new UserPojo();
                     userPojo.setChatId(chatId);
                     userPojo.setLastMessageId(lastMessageId);
-                    try {
-                        userPojo.setViewMessageId(bot.execute(new SendMessage(chatId, "Bot starting...")).message().messageId());
-                    }catch (Exception e){
-                        logger.error(Arrays.toString(e.getStackTrace()));
-                    }
+                    userPojo.setViewMessageId(0);
                     userPojo.setMessageType(MessageType.TEXT);
                     userPojo.insert();
                 }else {
@@ -144,6 +141,14 @@ public class BotApp implements Runnable {
                                 long msgId = 0;
                                 try {
                                     msgId = bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId();
+                                    List<Integer> messagesIdToDeleteList = new ArrayList<>();
+                                    for (int x = 1; x < 101; x++) {
+                                        if (msgId - x > 0) {
+                                            messagesIdToDeleteList.add((int) (msgId - x));
+                                        }
+                                    }
+                                    int[] messagesIdToDelete = messagesIdToDeleteList.stream().mapToInt(Integer::intValue).toArray();
+                                    bot.execute(new DeleteMessages(chatId, messagesIdToDelete));
                                 } catch (NullPointerException e) {
                                     e.printStackTrace();
                                     msgId = 0;
