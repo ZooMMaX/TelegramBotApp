@@ -3,8 +3,11 @@ package ru.zoommax.botapp.db.pojo;
 import com.mongodb.client.MongoCollection;
 import lombok.Getter;
 import lombok.Setter;
+import ru.zoommax.HexUtils;
 import ru.zoommax.MongoDBConnector;
+import ru.zoommax.botapp.utils.CRC16;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +17,7 @@ import static com.mongodb.client.model.Filters.eq;
 public class NotificationPojo extends MongoDBConnector {
     @Getter
     @Setter
-    private String uid = UUID.randomUUID().toString();
+    private String uid = HexUtils.toString(CRC16.calculateCRC16(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
     @Getter
     @Setter
     private String tg_id;
@@ -23,7 +26,7 @@ public class NotificationPojo extends MongoDBConnector {
     private String message;
     @Getter
     @Setter
-    private String date;
+    private Long date;
 
 
     public NotificationPojo() {
@@ -66,5 +69,9 @@ public class NotificationPojo extends MongoDBConnector {
 
     public List<NotificationPojo> findAll() {
         return collection().find().into(Arrays.asList());
+    }
+
+    public NotificationPojo findByUID() {
+        return collection().find(eq("uid", this.uid)).first();
     }
 }

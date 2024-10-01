@@ -4,6 +4,7 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.request.AnswerCallbackQuery;
 import com.pengrad.telegrambot.request.DeleteMessages;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.reflections.Reflections;
@@ -13,16 +14,19 @@ import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.zoommax.botapp.db.pojo.MessageType;
+import ru.zoommax.botapp.db.pojo.NotificationPojo;
 import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
 import ru.zoommax.botapp.db.pojo.UserPojo;
 import ru.zoommax.botapp.utils.VML;
 import ru.zoommax.botapp.utils.ViewMessageListener;
 import ru.zoommax.botapp.view.KBUnsafe;
+import ru.zoommax.botapp.view.NotificationMessage;
 import ru.zoommax.botapp.view.Pages;
 import ru.zoommax.botapp.view.ViewMessage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +35,7 @@ public class BotApp implements Runnable {
     public static String defaultErrorMessage;
     public static TelegramBot bot;
     public static int ButtonsRows = 4;
+    public static boolean enableNotification = false;
     public static HashMap<String, String> nextBtn = new HashMap<>();//"➡️";
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private Listener listener;
@@ -46,6 +51,9 @@ public class BotApp implements Runnable {
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         this.listener = listener;
+        if (enableNotification) {
+            notificationSchedule();
+        }
     }
 
     public BotApp(String token, Listener listener, int ButtonsRows) {
@@ -55,6 +63,9 @@ public class BotApp implements Runnable {
         bot = new TelegramBot(token);
         this.listener = listener;
         BotApp.ButtonsRows = ButtonsRows;
+        if (enableNotification) {
+            notificationSchedule();
+        }
     }
 
     public BotApp(String token) {
@@ -62,6 +73,9 @@ public class BotApp implements Runnable {
         prevBtn.put("default", "⬅️");
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
+        if (enableNotification) {
+            notificationSchedule();
+        }
     }
 
     public BotApp(String token, int ButtonsRows) {
@@ -70,7 +84,47 @@ public class BotApp implements Runnable {
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         BotApp.ButtonsRows = ButtonsRows;
+        if (enableNotification) {
+            notificationSchedule();
+        }
     }
+
+    private void notificationSchedule() {
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                List<NotificationPojo> notificationPojos = new NotificationPojo().findAll();
+                HashMap<String, HashMap<String, String>> serializedKBs = new HashMap<>();
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
+                for (NotificationPojo notificationPojo : notificationPojos) {
+                    HashMap<String, String> buttons = new HashMap<>();
+                    String buttonsNames = "";
+                    String buttonsCallbackData = "";
+                    if (serializedKBs.get(notificationPojo.getTg_id()) != null) {
+                        buttonsNames = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsNames");
+                        buttonsCallbackData = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsCallbackData");
+                    }
+                    buttonsNames += "\uD83D\uDD34"+sdf.format(new Date(notificationPojo.getDate())) + ";\n";
+                    buttonsCallbackData += "ntf" + notificationPojo.getUid() + ";\n";
+                    buttons.put("buttonsNames", buttonsNames);
+                    buttons.put("buttonsCallbackData", buttonsCallbackData);
+                    serializedKBs.put(notificationPojo.getTg_id(), buttons);
+                }
+
+                for (Map.Entry<String, HashMap<String, String>> entry : serializedKBs.entrySet()) {
+                    executor.submit(NotificationMessage.builder()
+                                    .chatId(Long.parseLong(entry.getKey()))
+                                    .message("У Вас есть непрочитанные уведомления")
+                                    .kbUnsafe(KBUnsafe.builder()
+                                            .buttonsNames(entry.getValue().get("buttonsNames"))
+                                            .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
+                                            .build())
+                            .build());
+                }
+            }
+        }, 0, 1000);
+    }
+
     @Override
     public void run() {
         Logger logger = org.slf4j.LoggerFactory.getLogger(BotApp.class);
@@ -198,6 +252,13 @@ public class BotApp implements Runnable {
                 }
 
                 if (update.callbackQuery() != null) {
+                    if (update.callbackQuery().data().startsWith("ntf")) {
+                        NotificationPojo notificationPojo = new NotificationPojo();
+                        notificationPojo.setUid(update.callbackQuery().data().replace("ntf:", ""));
+                        notificationPojo = notificationPojo.findByUID();
+                        bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true));
+                        notificationPojo.delete();
+                    }
                     if (update.callbackQuery().data().contains("nextButton")){
                         int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1])+1;
                         UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();

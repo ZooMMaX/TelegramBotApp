@@ -67,7 +67,7 @@ public class NotificationMessage implements Runnable{
 
         long NotifMessageId = userPojo.getNotificationMessageId();
         long messageId = userPojo.getLastMessageId();
-        MessageType messageType = userPojo.getMessageType();
+        MessageType messageType = userPojo.getMessageTypeNotif();
         if (messageId > -1) {
             bot.execute(new DeleteMessage(chatId, Math.toIntExact(messageId)));
         }
@@ -257,7 +257,7 @@ public class NotificationMessage implements Runnable{
             notifMessageId = bot.execute(sendDocument).message().messageId();
         }
         userPojo.setNotificationMessageId(notifMessageId);
-        userPojo.setMessageType(MessageType.MEDIA);
+        userPojo.setMessageTypeNotif(MessageType.MEDIA);
         userPojo.insert();
     }
 
@@ -273,7 +273,7 @@ public class NotificationMessage implements Runnable{
         }
         notifMessageId = bot.execute(sendMessage).message().messageId();
         userPojo.setViewMessageId(notifMessageId);
-        userPojo.setMessageType(MessageType.TEXT);
+        userPojo.setMessageTypeNotif(MessageType.TEXT);
         userPojo.insert();
     }
 }
