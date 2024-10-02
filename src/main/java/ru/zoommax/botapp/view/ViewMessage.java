@@ -84,7 +84,7 @@ public class ViewMessage implements Runnable{
                     return;
                 }
 
-                if (bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
+                if (!bot.execute(new EditMessageText(chatId, Math.toIntExact(ViewMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
                     sendText(chatId);
                 }
 

@@ -5,6 +5,7 @@ import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.AnswerCallbackQuery;
+import com.pengrad.telegrambot.request.DeleteMessage;
 import com.pengrad.telegrambot.request.DeleteMessages;
 import com.pengrad.telegrambot.request.SendMessage;
 import org.reflections.Reflections;
@@ -12,17 +13,9 @@ import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.zoommax.botapp.db.pojo.MessageType;
-import ru.zoommax.botapp.db.pojo.NotificationPojo;
-import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
-import ru.zoommax.botapp.db.pojo.UserPojo;
-import ru.zoommax.botapp.utils.VML;
+import ru.zoommax.botapp.db.pojo.*;
 import ru.zoommax.botapp.utils.ViewMessageListener;
-import ru.zoommax.botapp.view.KBUnsafe;
-import ru.zoommax.botapp.view.NotificationMessage;
-import ru.zoommax.botapp.view.Pages;
-import ru.zoommax.botapp.view.ViewMessage;
+import ru.zoommax.botapp.view.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -104,7 +97,7 @@ public class BotApp implements Runnable {
                         buttonsNames = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsNames");
                         buttonsCallbackData = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsCallbackData");
                     }
-                    buttonsNames += "\uD83D\uDD34"+sdf.format(new Date(notificationPojo.getDate())) + ";\n";
+                    buttonsNames += "\uD83D\uDD34" + sdf.format(new Date(notificationPojo.getDate())) + ";\n";
                     buttonsCallbackData += "ntf" + notificationPojo.getUid() + ";\n";
                     buttons.put("buttonsNames", buttonsNames);
                     buttons.put("buttonsCallbackData", buttonsCallbackData);
@@ -112,14 +105,29 @@ public class BotApp implements Runnable {
                 }
 
                 for (Map.Entry<String, HashMap<String, String>> entry : serializedKBs.entrySet()) {
-                    executor.submit(NotificationMessage.builder()
-                                    .chatId(Long.parseLong(entry.getKey()))
-                                    .message("У Вас есть непрочитанные уведомления")
-                                    .kbUnsafe(KBUnsafe.builder()
-                                            .buttonsNames(entry.getValue().get("buttonsNames"))
-                                            .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
-                                            .build())
-                            .build());
+                    NotifMarkupsPojo notifMarkupsPojo = new NotifMarkupsPojo();
+                    notifMarkupsPojo.setTg_id(entry.getKey());
+                    notifMarkupsPojo = notifMarkupsPojo.find();
+                    StringBuilder oldKB = new StringBuilder();
+                    if (notifMarkupsPojo != null) {
+                        List<Pages> pages = notifMarkupsPojo.getPages();
+                        if (pages != null) {
+                            for (Pages page : pages) {
+                                oldKB.append(page.getButtonsNames());
+                            }
+                        }
+                    }
+                    if (!oldKB.toString().equals(entry.getValue().get("buttonsNames"))) {
+                        executor.submit(NotificationMessage.builder()
+                                .chatId(Long.parseLong(entry.getKey()))
+                                .message("У Вас есть непрочитанные уведомления")
+                                .callbackKeyboard(NotifMarkup.builder()
+                                        .chatId(Long.parseLong(entry.getKey()))
+                                        .buttonsNames(entry.getValue().get("buttonsNames"))
+                                        .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
+                                        .build())
+                                .build());
+                    }
                 }
             }
         }, 0, 1000);
@@ -168,6 +176,12 @@ public class BotApp implements Runnable {
                         userPojo.setLastMessageId(lastMessageId);
                         userPojo.insert();
                     }
+                }
+                if (userPojo.getNotificationMessageId() <= 0) {
+                    userPojo.setNotificationMessageId(bot.execute(new SendMessage(userPojo.getChatId(), "Уведомления включены")).message().messageId());
+                    userPojo.setMessageTypeNotif(MessageType.TEXT);
+                    userPojo.insert();
+                    //bot.execute(new DeleteMessage(userPojo.getChatId(), Math.toIntExact(userPojo.getNotificationMessageId())));
                 }
 
 
@@ -254,10 +268,15 @@ public class BotApp implements Runnable {
                 if (update.callbackQuery() != null) {
                     if (update.callbackQuery().data().startsWith("ntf")) {
                         NotificationPojo notificationPojo = new NotificationPojo();
-                        notificationPojo.setUid(update.callbackQuery().data().replace("ntf:", ""));
+                        notificationPojo.setUid(update.callbackQuery().data().replace("ntf", ""));
                         notificationPojo = notificationPojo.findByUID();
-                        bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true));
-                        notificationPojo.delete();
+                        if (notificationPojo == null) {
+                            bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                        }
+                        if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()){
+                            bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                            notificationPojo.delete();
+                        }
                     }
                     if (update.callbackQuery().data().contains("nextButton")){
                         int keysPage = Integer.parseInt(update.callbackQuery().data().split(":")[1])+1;

@@ -4,7 +4,7 @@ public class CRC16 {
     private static final int POLYNOMIAL = 0x1021; // Полином CRC-16-CCITT
     private static final int PRESET_VALUE = 0xFFFF; // Начальное значение
 
-    public static byte[] calculateCRC16(byte[] data) {
+    public static String calculateCRC16(byte[] data) {
         int crc = PRESET_VALUE;
 
         for (byte b : data) {
@@ -21,11 +21,7 @@ public class CRC16 {
 
         crc &= 0xFFFF; // Ограничиваем результат до 16 бит
 
-        // Преобразуем результат в два байта
-        byte[] result = new byte[2];
-        result[0] = (byte) ((crc >> 8) & 0xFF); // Старший байт
-        result[1] = (byte) (crc & 0xFF);        // Младший байт
-
-        return result;
+        // Возвращаем строку в шестнадцатеричном формате
+        return String.format("%04X", crc);
     }
 }

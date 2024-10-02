@@ -55,7 +55,7 @@ public class NotifMarkup {
             callbackDataRow4.add(callbackData.subList(i, Math.min(i + BotApp.ButtonsRows, callbackData.size())));
         }
 
-        List<InlineKeyboardMarkup> markups = new ArrayList<>();
+        /*List<InlineKeyboardMarkup> markups = new ArrayList<>();
         for (int x = 0; x < namesRow4.size(); x++) {
             List<List<String>> namesRow = namesRow4.get(x);
             List<List<String>> callbackDataRow = callbackDataRow4.get(x);
@@ -80,15 +80,11 @@ public class NotifMarkup {
             InlineKeyboardButton buttonNext = null;
             if (x + 1 < namesRow4.size()) {
                 buttonNext = new InlineKeyboardButton(BotApp.nextBtn.get(langNextPrevButtons)).callbackData("nextButton:" + x);
-            }/*else {
-                buttonNext = new InlineKeyboardButton("→✖").callbackData("zero");
-            }*/
+            }
             InlineKeyboardButton buttonPrev = null;
             if (x > 0) {
                 buttonPrev = new InlineKeyboardButton(BotApp.prevBtn.get(langNextPrevButtons)).callbackData("prevButton:" + x);
-            }/*else {
-                buttonPrev = new InlineKeyboardButton("✖←").callbackData("zero");
-            }*/
+            }
 
             if (buttonNext != null && buttonPrev != null) {
                 markup.addRow(buttonPrev, buttonNext);
@@ -98,12 +94,28 @@ public class NotifMarkup {
                 markup.addRow(buttonPrev);
             }
             markups.add(markup);
+        }*/
+
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        for (int i = 0; i < names.size(); i++) {
+            List<InlineKeyboardButton> buttons = new ArrayList<>();
+            for (int j = 0; j < names.get(i).size(); j++) {
+                if (callbackData.get(i).get(j).startsWith("mapp")) {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).webApp(new WebAppInfo(callbackData.get(i).get(j).substring(4))));
+                } else if (callbackData.get(i).get(j).startsWith("http") || callbackData.get(i).get(j).startsWith("tg")) {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).url(callbackData.get(i).get(j)));
+                } else {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).callbackData(callbackData.get(i).get(j)));
+                }
+            }
+            markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
         }
 
         NotifMarkupsPojo notifMarkupsPojo = new NotifMarkupsPojo();
         notifMarkupsPojo.setTg_id(String.valueOf(chatId));
         List<Pages> pages = new ArrayList<>();
-        for (int i = 0; i < markups.size(); i++) {
+        /*for (int i = 0; i < markups.size(); i++) {
             InlineKeyboardMarkup markup = markups.get(i);
             Pages page = new Pages();
             StringBuilder buttonNamesp = new StringBuilder();
@@ -126,10 +138,14 @@ public class NotifMarkup {
                 page.setButtonsCallbacksData(buttonCallbackDatap.toString());
             }
             pages.add(page);
-        }
+        }*/
+        Pages page = new Pages();
+        page.setButtonsNames(buttonsNames);
+        page.setButtonsCallbacksData(buttonsCallbackData);
+        pages.add(page);
 
         notifMarkupsPojo.setPages(pages);
         notifMarkupsPojo.insert();
-        return markups.get(0);
+        return markup;
     }
 }

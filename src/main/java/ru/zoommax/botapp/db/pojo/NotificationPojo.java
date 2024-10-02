@@ -3,21 +3,22 @@ package ru.zoommax.botapp.db.pojo;
 import com.mongodb.client.MongoCollection;
 import lombok.Getter;
 import lombok.Setter;
-import ru.zoommax.HexUtils;
 import ru.zoommax.MongoDBConnector;
 import ru.zoommax.botapp.utils.CRC16;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.CRC32;
 
 import static com.mongodb.client.model.Filters.eq;
 
 public class NotificationPojo extends MongoDBConnector {
     @Getter
     @Setter
-    private String uid = HexUtils.toString(CRC16.calculateCRC16(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8)));
+    private String uid = guid();
     @Getter
     @Setter
     private String tg_id;
@@ -26,8 +27,16 @@ public class NotificationPojo extends MongoDBConnector {
     private String message;
     @Getter
     @Setter
-    private Long date;
+    private Long date = System.currentTimeMillis();
 
+
+    private String guid() {
+        CRC32 crc32 = new CRC32();
+        crc32.update(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
+        String result = Long.toHexString(crc32.getValue());
+        crc32.reset();
+        return result;
+    }
 
     public NotificationPojo() {
     }
@@ -64,11 +73,11 @@ public class NotificationPojo extends MongoDBConnector {
     }
 
     public List<NotificationPojo> findAllByTgId() {
-        return collection().find(eq("tg_id", this.tg_id)).into(Arrays.asList());
+        return collection().find(eq("tg_id", this.tg_id)).into(new ArrayList<>());
     }
 
     public List<NotificationPojo> findAll() {
-        return collection().find().into(Arrays.asList());
+        return collection().find().into(new ArrayList<>());
     }
 
     public NotificationPojo findByUID() {

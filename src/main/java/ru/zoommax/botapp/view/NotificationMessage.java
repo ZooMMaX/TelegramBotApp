@@ -3,7 +3,6 @@ package ru.zoommax.botapp.view;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.*;
 import com.pengrad.telegrambot.request.*;
-import com.pengrad.telegrambot.response.BaseResponse;
 import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +18,10 @@ import static ru.zoommax.botapp.BotApp.bot;
 
 @Builder
 public class NotificationMessage implements Runnable{
-
     private static final Logger log = LoggerFactory.getLogger(ViewMessage.class);
     private String message;
     private final long chatId;
-    private KeyboardMarkup callbackKeyboard;
+    private NotifMarkup callbackKeyboard;
     private InlineKeyboardMarkup inlineKeyboard;
     private KBUnsafe kbUnsafe;
     private File image;
@@ -43,7 +41,7 @@ public class NotificationMessage implements Runnable{
                 inlineKeyboard = callbackKeyboard.getInlineKeyboard();
             }
         }
-        Logger logger = LoggerFactory.getLogger(ViewMessage.class);
+        Logger logger = LoggerFactory.getLogger(NotificationMessage.class);
         if (caption != null && caption.length() > 1024) {
             message = caption;
             caption = null;
@@ -63,14 +61,17 @@ public class NotificationMessage implements Runnable{
                     bot.execute(new DeleteMessage(chatId, messageId));
                 }
             }
-        }*/
+        }
 
         long NotifMessageId = userPojo.getNotificationMessageId();
         long messageId = userPojo.getLastMessageId();
         MessageType messageType = userPojo.getMessageTypeNotif();
         if (messageId > -1) {
             bot.execute(new DeleteMessage(chatId, Math.toIntExact(messageId)));
-        }
+        }*/
+
+        long NotifMessageId = userPojo.getNotificationMessageId();
+        MessageType messageType = userPojo.getMessageTypeNotif();
 
         if (image == null && video == null && audio == null && message == null && caption == null && images == null && document == null) {
             EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(NotifMessageId));
@@ -84,7 +85,7 @@ public class NotificationMessage implements Runnable{
                     return;
                 }
 
-                if (bot.execute(new EditMessageText(chatId, Math.toIntExact(NotifMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
+                if (!bot.execute(new EditMessageText(chatId, Math.toIntExact(NotifMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
                     sendText(chatId);
                 }
 
@@ -182,7 +183,7 @@ public class NotificationMessage implements Runnable{
         userPojo.setChatId(chatId);
         userPojo = userPojo.find();
         int notifMessageId = Math.toIntExact(userPojo.getNotificationMessageId());
-        Logger logger = LoggerFactory.getLogger(ViewMessage.class);
+        Logger logger = LoggerFactory.getLogger(NotificationMessage.class);
         bot.execute(new DeleteMessage(chatId, Math.toIntExact(notifMessageId)));
         if (image != null && video != null && audio != null && images != null && document != null ||
                 image != null && video != null || image != null && audio != null || image != null && images != null ||
@@ -272,7 +273,7 @@ public class NotificationMessage implements Runnable{
             sendMessage.replyMarkup(inlineKeyboard);
         }
         notifMessageId = bot.execute(sendMessage).message().messageId();
-        userPojo.setViewMessageId(notifMessageId);
+        userPojo.setNotificationMessageId(notifMessageId);
         userPojo.setMessageTypeNotif(MessageType.TEXT);
         userPojo.insert();
     }

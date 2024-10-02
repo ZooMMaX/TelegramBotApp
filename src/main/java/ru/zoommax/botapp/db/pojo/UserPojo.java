@@ -35,7 +35,7 @@ public class UserPojo extends MongoDBConnector {
     private List<Integer> messageIdsToDel;
     @Getter
     @Setter
-    private long notificationMessageId;
+    private long notificationMessageId = -100;
 
     public UserPojo(){}
 
