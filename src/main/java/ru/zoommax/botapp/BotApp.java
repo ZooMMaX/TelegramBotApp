@@ -178,9 +178,16 @@ public class BotApp implements Runnable {
                     }
                 }
                 if (userPojo.getNotificationMessageId() <= 0) {
-                    userPojo.setNotificationMessageId(bot.execute(new SendMessage(userPojo.getChatId(), "Уведомления включены")).message().messageId());
-                    userPojo.setMessageTypeNotif(MessageType.TEXT);
-                    userPojo.insert();
+                    int msid = -100;
+                    try {
+                        msid = bot.execute(new SendMessage(userPojo.getChatId(), "Уведомления включены")).message().messageId();
+                    } catch (Exception e) {
+                        System.out.println("No message id");
+                        e.printStackTrace();
+                    }
+                        userPojo.setNotificationMessageId(msid);
+                        userPojo.setMessageTypeNotif(MessageType.TEXT);
+                        userPojo.insert();
                     //bot.execute(new DeleteMessage(userPojo.getChatId(), Math.toIntExact(userPojo.getNotificationMessageId())));
                 }
 
