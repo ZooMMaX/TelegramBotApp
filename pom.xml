@@ -6,7 +6,7 @@
 
     <groupId>ru.zoommax</groupId>
     <artifactId>TelegramBotApp</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.7.1-SNAPSHOT</version>
     <name>One message bot</name>
     <description>TelegramBotApp</description>
     <url>https://github.com/ZooMMaX/TelegramBotApp</url>
