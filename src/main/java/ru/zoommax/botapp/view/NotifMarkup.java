@@ -5,14 +5,14 @@ import com.pengrad.telegrambot.model.request.*;
 import lombok.Builder;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.BotApp;
-import ru.zoommax.botapp.db.pojo.UserMarkupsPojo;
+import ru.zoommax.botapp.db.pojo.NotifMarkupsPojo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 @Builder
-public class KeyboardMarkup {
+public class NotifMarkup {
     String langNextPrevButtons;
     String buttonsNames;
     String buttonsCallbackData;
@@ -55,7 +55,7 @@ public class KeyboardMarkup {
             callbackDataRow4.add(callbackData.subList(i, Math.min(i + BotApp.ButtonsRows, callbackData.size())));
         }
 
-        List<InlineKeyboardMarkup> markups = new ArrayList<>();
+        /*List<InlineKeyboardMarkup> markups = new ArrayList<>();
         for (int x = 0; x < namesRow4.size(); x++) {
             List<List<String>> namesRow = namesRow4.get(x);
             List<List<String>> callbackDataRow = callbackDataRow4.get(x);
@@ -69,26 +69,22 @@ public class KeyboardMarkup {
                 for (int j = 0; j < namesRow.get(i).size(); j++) {
                     if (callbackDataRow.get(i).get(j).startsWith("mapp")) {
                         buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).webApp(new WebAppInfo(callbackDataRow.get(i).get(j).substring(4))));
-                    } else if (callbackDataRow.get(i).get(j).startsWith("http") || callbackDataRow.get(i).get(j).startsWith("tg")){
+                    } else if (callbackDataRow.get(i).get(j).startsWith("http") || callbackDataRow.get(i).get(j).startsWith("tg")) {
                         buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).url(callbackDataRow.get(i).get(j)));
-                    }else {
+                    } else {
                         buttons.add(new InlineKeyboardButton(namesRow.get(i).get(j)).callbackData(callbackDataRow.get(i).get(j)));
                     }
                 }
                 markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
             }
             InlineKeyboardButton buttonNext = null;
-            if (x+1 < namesRow4.size()) {
+            if (x + 1 < namesRow4.size()) {
                 buttonNext = new InlineKeyboardButton(BotApp.nextBtn.get(langNextPrevButtons)).callbackData("nextButton:" + x);
-            }/*else {
-                buttonNext = new InlineKeyboardButton("→✖").callbackData("zero");
-            }*/
+            }
             InlineKeyboardButton buttonPrev = null;
             if (x > 0) {
                 buttonPrev = new InlineKeyboardButton(BotApp.prevBtn.get(langNextPrevButtons)).callbackData("prevButton:" + x);
-            }/*else {
-                buttonPrev = new InlineKeyboardButton("✖←").callbackData("zero");
-            }*/
+            }
 
             if (buttonNext != null && buttonPrev != null) {
                 markup.addRow(buttonPrev, buttonNext);
@@ -98,12 +94,28 @@ public class KeyboardMarkup {
                 markup.addRow(buttonPrev);
             }
             markups.add(markup);
+        }*/
+
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        for (int i = 0; i < names.size(); i++) {
+            List<InlineKeyboardButton> buttons = new ArrayList<>();
+            for (int j = 0; j < names.get(i).size(); j++) {
+                if (callbackData.get(i).get(j).startsWith("mapp")) {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).webApp(new WebAppInfo(callbackData.get(i).get(j).substring(4))));
+                } else if (callbackData.get(i).get(j).startsWith("http") || callbackData.get(i).get(j).startsWith("tg")) {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).url(callbackData.get(i).get(j)));
+                } else {
+                    buttons.add(new InlineKeyboardButton(names.get(i).get(j)).callbackData(callbackData.get(i).get(j)));
+                }
+            }
+            markup.addRow(Arrays.copyOf(buttons.toArray(), buttons.size(), InlineKeyboardButton[].class));
         }
 
-        UserMarkupsPojo userMarkupsPojo = new UserMarkupsPojo();
-        userMarkupsPojo.setTg_id(String.valueOf(chatId));
+        NotifMarkupsPojo notifMarkupsPojo = new NotifMarkupsPojo();
+        notifMarkupsPojo.setTg_id(String.valueOf(chatId));
         List<Pages> pages = new ArrayList<>();
-        for (int i = 0; i < markups.size(); i++) {
+        /*for (int i = 0; i < markups.size(); i++) {
             InlineKeyboardMarkup markup = markups.get(i);
             Pages page = new Pages();
             StringBuilder buttonNamesp = new StringBuilder();
@@ -126,37 +138,14 @@ public class KeyboardMarkup {
                 page.setButtonsCallbacksData(buttonCallbackDatap.toString());
             }
             pages.add(page);
-        }
+        }*/
+        Pages page = new Pages();
+        page.setButtonsNames(buttonsNames);
+        page.setButtonsCallbacksData(buttonsCallbackData);
+        pages.add(page);
 
-        userMarkupsPojo.setPages(pages);
-        userMarkupsPojo.insert();
-        return markups.get(0);
-    }
-
-    public ReplyKeyboardMarkup getReplyKeyboard() {
-        List<List<String>> names = new ArrayList<>();
-
-        for (String name : buttonsNames.split("\n")) {
-            List<String> row = new ArrayList<>(Arrays.asList(name.split(";")));
-            names.add(row);
-        }
-
-
-        List<List<KeyboardButton>> rows = new ArrayList<>();
-        for (int i = 0; i < names.size(); i++) {
-            List<KeyboardButton> buttons = new ArrayList<>();
-            for (int j = 0; j < names.get(i).size(); j++) {
-                buttons.add(new KeyboardButton(names.get(i).get(j)));
-            }
-            rows.add(buttons);
-        }
-        KeyboardButton[][] buttons = new KeyboardButton[rows.size()][];
-        for (int i = 0; i < rows.size(); i++) {
-            buttons[i] = Arrays.copyOf(rows.get(i).toArray(), rows.get(i).size(), KeyboardButton[].class);
-        }
-        ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup(buttons);
-        markup.oneTimeKeyboard(true);
-        markup.resizeKeyboard(true);
+        notifMarkupsPojo.setPages(pages);
+        notifMarkupsPojo.insert();
         return markup;
     }
 }

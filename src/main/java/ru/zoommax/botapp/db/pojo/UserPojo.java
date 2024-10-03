@@ -29,7 +29,13 @@ public class UserPojo extends MongoDBConnector {
     private MessageType messageType;
     @Getter
     @Setter
+    private MessageType messageTypeNotif;
+    @Getter
+    @Setter
     private List<Integer> messageIdsToDel;
+    @Getter
+    @Setter
+    private long notificationMessageId = -100;
 
     public UserPojo(){}
 
