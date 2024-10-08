@@ -277,12 +277,16 @@ public class BotApp implements Runnable {
                         NotificationPojo notificationPojo = new NotificationPojo();
                         notificationPojo.setUid(update.callbackQuery().data().replace("ntf", ""));
                         notificationPojo = notificationPojo.findByUID();
-                        if (notificationPojo == null) {
-                            bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
-                        }
-                        if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()){
-                            bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
-                            notificationPojo.delete();
+                        try {
+                            if (notificationPojo == null) {
+                                bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                            }
+                            if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()) {
+                                bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                                notificationPojo.delete();
+                            }
+                        }catch (NullPointerException e){
+                            e.printStackTrace();
                         }
                     }
                     if (update.callbackQuery().data().contains("nextButton")){
