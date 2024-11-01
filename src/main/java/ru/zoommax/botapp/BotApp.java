@@ -280,8 +280,7 @@ public class BotApp implements Runnable {
                         try {
                             if (notificationPojo == null) {
                                 bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
-                            }
-                            if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()) {
+                            }else if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()) {
                                 bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
                                 notificationPojo.delete();
                             }
