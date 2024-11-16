@@ -28,6 +28,18 @@ public class NotificationPojo extends MongoDBConnector {
     @Getter
     @Setter
     private Long date = System.currentTimeMillis();
+    @Getter
+    @Setter
+    private boolean read = false;
+    @Getter
+    @Setter
+    private NotificationType notificationType = NotificationType.ALERT;
+    @Getter
+    @Setter
+    private String file = "";
+    @Getter
+    @Setter
+    private String fileType = "";
 
 
     private String guid() {

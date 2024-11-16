@@ -4,10 +4,11 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.PhotoSize;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.request.AnswerCallbackQuery;
-import com.pengrad.telegrambot.request.DeleteMessage;
-import com.pengrad.telegrambot.request.DeleteMessages;
-import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
+import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.model.request.InputFile;
+import com.pengrad.telegrambot.model.request.ParseMode;
+import com.pengrad.telegrambot.request.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
@@ -17,6 +18,7 @@ import ru.zoommax.botapp.db.pojo.*;
 import ru.zoommax.botapp.utils.ViewMessageListener;
 import ru.zoommax.botapp.view.*;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
@@ -29,6 +31,7 @@ public class BotApp implements Runnable {
     public static TelegramBot bot;
     public static int ButtonsRows = 4;
     public static boolean enableNotification = false;
+    public static String dbName = "BotApp";
     public static HashMap<String, String> nextBtn = new HashMap<>();//"➡️";
     public static HashMap<String, String> prevBtn = new HashMap<>();//"⬅️";
     private Listener listener;
@@ -37,6 +40,8 @@ public class BotApp implements Runnable {
                 .setUrls(ClasspathHelper.forPackage(Thread.currentThread().getStackTrace()[2].toString().split("\\.")[0]))
                 .setScanners(Scanners.SubTypes, Scanners.ConstructorsAnnotated, Scanners.MethodsAnnotated, Scanners.FieldsAnnotated, Scanners.TypesAnnotated));
     Set<Class<?>> annotated = reflections.getTypesAnnotatedWith(ViewMessageListener.class);
+
+    private boolean sendNotif = true;
 
     public BotApp(String token, Listener listener) {
         nextBtn.put("default", "➡️");
@@ -89,19 +94,37 @@ public class BotApp implements Runnable {
                 List<NotificationPojo> notificationPojos = new NotificationPojo().findAll();
                 HashMap<String, HashMap<String, String>> serializedKBs = new HashMap<>();
                 SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd.MM.yyyy");
+                String msgText = "";
+                String image = "";
+                String fileType = "";
                 for (NotificationPojo notificationPojo : notificationPojos) {
-                    HashMap<String, String> buttons = new HashMap<>();
-                    String buttonsNames = "";
-                    String buttonsCallbackData = "";
-                    if (serializedKBs.get(notificationPojo.getTg_id()) != null) {
-                        buttonsNames = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsNames");
-                        buttonsCallbackData = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsCallbackData");
+                    if (!notificationPojo.isRead()) {
+                        if (notificationPojo.getNotificationType() == NotificationType.FULL) {
+                            msgText = notificationPojo.getMessage();
+                            if (!notificationPojo.getFile().isEmpty()){
+                                image = notificationPojo.getFile();
+                                fileType = notificationPojo.getFileType();
+                            }else {
+                                image = "";
+                                fileType = "";
+                            }
+                        }else {
+                            msgText = "У Вас есть непрочитанные уведомления";
+                            image = "";
+                        }
+                        HashMap<String, String> buttons = new HashMap<>();
+                        String buttonsNames = "";
+                        String buttonsCallbackData = "";
+                        if (serializedKBs.get(notificationPojo.getTg_id()) != null) {
+                            buttonsNames = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsNames");
+                            buttonsCallbackData = serializedKBs.get(notificationPojo.getTg_id()).get("buttonsCallbackData");
+                        }
+                        buttonsNames += "\uD83D\uDD34" + sdf.format(new Date(notificationPojo.getDate())) + ";\n";
+                        buttonsCallbackData += "ntf" + notificationPojo.getUid() + ";\n";
+                        buttons.put("buttonsNames", buttonsNames);
+                        buttons.put("buttonsCallbackData", buttonsCallbackData);
+                        serializedKBs.put(notificationPojo.getTg_id(), buttons);
                     }
-                    buttonsNames += "\uD83D\uDD34" + sdf.format(new Date(notificationPojo.getDate())) + ";\n";
-                    buttonsCallbackData += "ntf" + notificationPojo.getUid() + ";\n";
-                    buttons.put("buttonsNames", buttonsNames);
-                    buttons.put("buttonsCallbackData", buttonsCallbackData);
-                    serializedKBs.put(notificationPojo.getTg_id(), buttons);
                 }
 
                 for (Map.Entry<String, HashMap<String, String>> entry : serializedKBs.entrySet()) {
@@ -117,16 +140,45 @@ public class BotApp implements Runnable {
                             }
                         }
                     }
-                    if (!oldKB.toString().equals(entry.getValue().get("buttonsNames"))) {
-                        executor.submit(NotificationMessage.builder()
-                                .chatId(Long.parseLong(entry.getKey()))
-                                .message("У Вас есть непрочитанные уведомления")
-                                .callbackKeyboard(NotifMarkup.builder()
+                    if (!oldKB.toString().equals(entry.getValue().get("buttonsNames")) || sendNotif) {
+                        sendNotif = false;
+                        if (image.isEmpty()) {
+                            executor.submit(NotificationMessage.builder()
+                                    .chatId(Long.parseLong(entry.getKey()))
+                                    .message(msgText)
+                                    .callbackKeyboard(NotifMarkup.builder()
+                                            .chatId(Long.parseLong(entry.getKey()))
+                                            .buttonsNames(entry.getValue().get("buttonsNames"))
+                                            .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
+                                            .build())
+                                    .build());
+                        }else {
+                            File file = new File(image);
+                            if (fileType.equals("video")) {
+                                executor.submit(NotificationMessage.builder()
                                         .chatId(Long.parseLong(entry.getKey()))
-                                        .buttonsNames(entry.getValue().get("buttonsNames"))
-                                        .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
-                                        .build())
-                                .build());
+                                        .caption(msgText)
+                                        .video(file)
+                                        .callbackKeyboard(NotifMarkup.builder()
+                                                .chatId(Long.parseLong(entry.getKey()))
+                                                .buttonsNames(entry.getValue().get("buttonsNames"))
+                                                .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
+                                                .build())
+                                        .build());
+                            }
+                            if (fileType.equals("image")) {
+                                executor.submit(NotificationMessage.builder()
+                                        .chatId(Long.parseLong(entry.getKey()))
+                                        .caption(msgText)
+                                        .image(file)
+                                        .callbackKeyboard(NotifMarkup.builder()
+                                                .chatId(Long.parseLong(entry.getKey()))
+                                                .buttonsNames(entry.getValue().get("buttonsNames"))
+                                                .buttonsCallbackData(entry.getValue().get("buttonsCallbackData"))
+                                                .build())
+                                        .build());
+                            }
+                        }
                     }
                 }
             }
@@ -177,19 +229,6 @@ public class BotApp implements Runnable {
                         userPojo.insert();
                     }
                 }
-                if (userPojo.getNotificationMessageId() <= 0) {
-                    int msid = -100;
-                    try {
-                        msid = bot.execute(new SendMessage(userPojo.getChatId(), "Уведомления включены")).message().messageId();
-                    } catch (Exception e) {
-                        System.out.println("No message id");
-                        e.printStackTrace();
-                    }
-                        userPojo.setNotificationMessageId(msid);
-                        userPojo.setMessageTypeNotif(MessageType.TEXT);
-                        userPojo.insert();
-                    //bot.execute(new DeleteMessage(userPojo.getChatId(), Math.toIntExact(userPojo.getNotificationMessageId())));
-                }
 
 
                 ViewMessage viewMessage = null;
@@ -216,14 +255,11 @@ public class BotApp implements Runnable {
                                 long msgId = 0;
                                 try {
                                     msgId = bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId();
-                                    List<Integer> messagesIdToDeleteList = new ArrayList<>();
-                                    for (int x = 1; x < 101; x++) {
+                                    for (int x = 1; x < 1001; x++) {
                                         if (msgId - x > 0) {
-                                            messagesIdToDeleteList.add((int) (msgId - x));
+                                            bot.execute(new DeleteMessage(update.message().chat().id(), (int) (msgId - x)));
                                         }
                                     }
-                                    int[] messagesIdToDelete = messagesIdToDeleteList.stream().mapToInt(Integer::intValue).toArray();
-                                    bot.execute(new DeleteMessages(chatId, messagesIdToDelete));
                                 } catch (NullPointerException e) {
                                     e.printStackTrace();
                                     msgId = 0;
@@ -273,6 +309,10 @@ public class BotApp implements Runnable {
                 }
 
                 if (update.callbackQuery() != null) {
+                    if (update.callbackQuery().data().startsWith("ntfс")) {
+                        DeleteMessage deleteMessage = new DeleteMessage(chatId, update.callbackQuery().message().messageId());
+                        bot.execute(deleteMessage);
+                    }
                     if (update.callbackQuery().data().startsWith("ntf")) {
                         NotificationPojo notificationPojo = new NotificationPojo();
                         notificationPojo.setUid(update.callbackQuery().data().replace("ntf", ""));
@@ -280,9 +320,55 @@ public class BotApp implements Runnable {
                         try {
                             if (notificationPojo == null) {
                                 bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                                userPojo.setNotificationMessageId(-1);
+                                userPojo.setMessageTypeNotif(MessageType.TEXT);
+                                userPojo.insert();
+                            }else if (notificationPojo.getNotificationType() == NotificationType.FULL){
+                                bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
+                                userPojo.setNotificationMessageId(-1);
+                                userPojo.setMessageTypeNotif(MessageType.TEXT);
+                                userPojo.insert();
+                                if (!notificationPojo.getFile().isEmpty()){
+                                    File file = new File(notificationPojo.getFile());
+                                    String fileType = notificationPojo.getFileType();
+                                    if (fileType.equals("image")) {
+                                        SendPhoto sendPhoto = new SendPhoto(chatId, file).caption(notificationPojo.getMessage()).parseMode(ParseMode.HTML);
+                                        sendPhoto.replyMarkup(new InlineKeyboardMarkup(
+                                                new InlineKeyboardButton[]{
+                                                        new InlineKeyboardButton("Закрыть").callbackData("ntfс" + notificationPojo.getUid())
+                                                }
+                                        ));
+                                        bot.execute(sendPhoto);
+                                    }
+                                    if (fileType.equals("video")) {
+                                        SendVideo sendVideo = new SendVideo(chatId, file).caption(notificationPojo.getMessage()).parseMode(ParseMode.HTML);
+                                        sendVideo.replyMarkup(new InlineKeyboardMarkup(
+                                                new InlineKeyboardButton[]{
+                                                        new InlineKeyboardButton("Закрыть").callbackData("ntfс" + notificationPojo.getUid())
+                                                }
+                                        ));
+                                        bot.execute(sendVideo);
+                                    }
+                                }else {
+                                    SendMessage sendMessage = new SendMessage(chatId, notificationPojo.getMessage()).parseMode(ParseMode.HTML);
+                                    sendMessage.replyMarkup(new InlineKeyboardMarkup(
+                                            new InlineKeyboardButton[]{
+                                                    new InlineKeyboardButton("Закрыть").callbackData("ntfс" + notificationPojo.getUid())
+                                            }
+                                    ));
+                                    bot.execute(sendMessage);
+                                }
+                                notificationPojo.setRead(true);
+                                notificationPojo.insert();
+                                sendNotif = true;
                             }else if (bot.execute(new AnswerCallbackQuery(update.callbackQuery().id()).text(notificationPojo.getMessage()).showAlert(true)).isOk()) {
                                 bot.execute(new DeleteMessage(chatId, update.callbackQuery().message().messageId()));
-                                notificationPojo.delete();
+                                userPojo.setNotificationMessageId(-1);
+                                userPojo.setMessageTypeNotif(MessageType.TEXT);
+                                userPojo.insert();
+                                notificationPojo.setRead(true);
+                                notificationPojo.insert();
+                                sendNotif = true;
                             }
                         }catch (NullPointerException e){
                             e.printStackTrace();

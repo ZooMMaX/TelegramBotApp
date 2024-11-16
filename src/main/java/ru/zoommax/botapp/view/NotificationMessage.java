@@ -25,8 +25,10 @@ public class NotificationMessage implements Runnable{
     private InlineKeyboardMarkup inlineKeyboard;
     private KBUnsafe kbUnsafe;
     private File image;
+    private String imageUrl;
     private List<File> images;
     private File video;
+    private String videoUrl;
     private File audio;
     private File document;
     private String caption;
