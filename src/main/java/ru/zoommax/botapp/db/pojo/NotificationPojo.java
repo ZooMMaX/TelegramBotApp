@@ -4,6 +4,7 @@ import com.mongodb.client.MongoCollection;
 import lombok.Getter;
 import lombok.Setter;
 import ru.zoommax.MongoDBConnector;
+import ru.zoommax.botapp.BotApp;
 import ru.zoommax.botapp.utils.CRC16;
 
 import java.nio.charset.StandardCharsets;
@@ -55,7 +56,7 @@ public class NotificationPojo extends MongoDBConnector {
 
     @SuppressWarnings("unchecked")
     private MongoCollection<NotificationPojo> collection() {
-        return (MongoCollection<NotificationPojo>) getCollection("notifications", "BotApp", this);
+        return (MongoCollection<NotificationPojo>) getCollection("notifications", BotApp.dbName, this);
     }
 
     private boolean exist() {

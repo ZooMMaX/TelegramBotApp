@@ -1,35 +1,42 @@
 package ru.zoommax.botapp.db.pojo;
 
 import com.mongodb.client.MongoCollection;
-import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
-import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import lombok.Getter;
 import lombok.Setter;
 import ru.zoommax.MongoDBConnector;
 import ru.zoommax.botapp.BotApp;
-import ru.zoommax.botapp.view.Pages;
+import ru.zoommax.botapp.view.ViewMessage;
 
-import java.io.ObjectOutputStream;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
-public class NotifMarkupsPojo extends MongoDBConnector {
+public class MessageRemoverPojo extends MongoDBConnector {
     @Getter
     @Setter
     private String tg_id;
-
     @Getter
     @Setter
-    private List<Pages> pages;
+    private long lastModifyViewMessage;
+    @Getter
+    @Setter
+    private long date;
+    @Getter
+    @Setter
+    private String message;
+    @Getter
+    @Setter
+    private String buttonNames;
+    @Getter
+    @Setter
+    private String buttonsCallbackData;
 
-    public NotifMarkupsPojo() {
-    }
+    public MessageRemoverPojo() {}
 
     @SuppressWarnings("unchecked")
-    private MongoCollection<NotifMarkupsPojo> collection() {
-        return (MongoCollection<NotifMarkupsPojo>) getCollection("notifMarkups", BotApp.dbName, this);
+    private MongoCollection<MessageRemoverPojo> collection() {
+        return (MongoCollection<MessageRemoverPojo>) getCollection("removeMessages", BotApp.dbName, this);
     }
 
     private boolean exist() {
@@ -54,7 +61,11 @@ public class NotifMarkupsPojo extends MongoDBConnector {
         return result.contains("deletedCount=1");
     }
 
-    public NotifMarkupsPojo find() {
+    public MessageRemoverPojo find() {
         return collection().find(eq("tg_id", this.tg_id)).first();
+    }
+
+    public List<MessageRemoverPojo> findAll() {
+        return collection().find().into(new ArrayList<>());
     }
 }

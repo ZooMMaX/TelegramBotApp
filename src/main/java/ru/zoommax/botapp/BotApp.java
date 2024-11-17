@@ -15,6 +15,7 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import ru.zoommax.botapp.db.pojo.*;
+import ru.zoommax.botapp.utils.MessageRemover;
 import ru.zoommax.botapp.utils.ViewMessageListener;
 import ru.zoommax.botapp.view.*;
 
@@ -49,6 +50,7 @@ public class BotApp implements Runnable {
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         this.listener = listener;
+        messageRemoverSchedule();
         if (enableNotification) {
             notificationSchedule();
         }
@@ -61,6 +63,7 @@ public class BotApp implements Runnable {
         bot = new TelegramBot(token);
         this.listener = listener;
         BotApp.ButtonsRows = ButtonsRows;
+        messageRemoverSchedule();
         if (enableNotification) {
             notificationSchedule();
         }
@@ -71,6 +74,7 @@ public class BotApp implements Runnable {
         prevBtn.put("default", "⬅️");
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
+        messageRemoverSchedule();
         if (enableNotification) {
             notificationSchedule();
         }
@@ -82,9 +86,14 @@ public class BotApp implements Runnable {
         defaultErrorMessage = "Error. Please send /start";
         bot = new TelegramBot(token);
         BotApp.ButtonsRows = ButtonsRows;
+        messageRemoverSchedule();
         if (enableNotification) {
             notificationSchedule();
         }
+    }
+
+    private void messageRemoverSchedule() {
+        new Timer().scheduleAtFixedRate(new MessageRemover(executor), 0, 1000);
     }
 
     private void notificationSchedule() {

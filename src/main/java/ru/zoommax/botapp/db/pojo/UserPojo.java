@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import ru.zoommax.MongoDBConnector;
+import ru.zoommax.botapp.BotApp;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +22,9 @@ public class UserPojo extends MongoDBConnector {
     @Getter
     @Setter
     private long ViewMessageId;
+    @Getter
+    @Setter
+    private long lastModifyViewMessage;
     @Getter
     @Setter
     private long lastMessageId;
@@ -41,7 +45,7 @@ public class UserPojo extends MongoDBConnector {
 
     @SuppressWarnings("unchecked")
     private MongoCollection<UserPojo> collection() {
-        return (MongoCollection<UserPojo>) getCollection("users", "BotApp", this);
+        return (MongoCollection<UserPojo>) getCollection("users", BotApp.dbName, this);
     }
 
     private boolean exist() {

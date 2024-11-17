@@ -6,6 +6,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import lombok.Getter;
 import lombok.Setter;
 import ru.zoommax.MongoDBConnector;
+import ru.zoommax.botapp.BotApp;
 import ru.zoommax.botapp.view.Pages;
 
 import java.io.ObjectOutputStream;
@@ -28,7 +29,7 @@ public class UserMarkupsPojo extends MongoDBConnector {
 
     @SuppressWarnings("unchecked")
     private MongoCollection<UserMarkupsPojo> collection() {
-        return (MongoCollection<UserMarkupsPojo>) getCollection("userMarkups", "BotApp", this);
+        return (MongoCollection<UserMarkupsPojo>) getCollection("userMarkups", BotApp.dbName, this);
     }
 
     private boolean exist() {

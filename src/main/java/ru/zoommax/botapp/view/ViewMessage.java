@@ -55,6 +55,8 @@ public class ViewMessage implements Runnable{
         UserPojo userPojo = new UserPojo();
         userPojo.setChatId(chatId);
         userPojo = userPojo.find();
+        userPojo.setLastModifyViewMessage(System.currentTimeMillis());
+        userPojo.insert();
 
         List<Integer> messageIdsToDel = userPojo.getMessageIdsToDel();
         if ((message != null && !captionAsMessage) || image != null || video != null || audio != null || images != null || document != null) {
