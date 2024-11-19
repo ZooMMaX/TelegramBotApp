@@ -265,9 +265,14 @@ public class BotApp implements Runnable {
                                 try {
                                     msgId = bot.execute(new SendMessage(update.message().chat().id(), "Bot starting...")).message().messageId();
                                     for (int x = 1; x < 1001; x++) {
-                                        if (msgId - x > 0) {
-                                            bot.execute(new DeleteMessage(update.message().chat().id(), (int) (msgId - x)));
-                                        }
+                                        long finalMsgId = msgId;
+                                        int finalX = x;
+                                        Runnable r = (() -> {
+                                            if (finalMsgId - finalX > 0) {
+                                                bot.execute(new DeleteMessage(update.message().chat().id(), (int) (finalMsgId - finalX)));
+                                            }
+                                        });
+                                        executor.submit(r);
                                     }
                                 } catch (NullPointerException e) {
                                     e.printStackTrace();
