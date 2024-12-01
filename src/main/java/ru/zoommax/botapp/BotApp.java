@@ -304,8 +304,8 @@ public class BotApp implements Runnable {
                                 for (Class<?> listener : annotated) {
                                     //viewMessage = listener.onMessage(update.message().text(), update.message().messageId(), update.message().chat().id(), update);
                                     try {
-                                        Method method = listener.getMethod("onMessage", String.class, int.class, long.class, Update.class);
-                                        viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), update);
+                                        Method method = listener.getMethod("onMessage", String.class, int.class, long.class, String.class, Update.class);
+                                        viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), userPojo.getOnMessageFlag(), update);
                                         if (viewMessage != null) {
                                             break;
                                         }
