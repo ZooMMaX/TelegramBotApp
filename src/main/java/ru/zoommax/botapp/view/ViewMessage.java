@@ -33,6 +33,7 @@ public class ViewMessage implements Runnable{
     private File document;
     private String caption;
     private boolean captionAsMessage = false;
+    private String onMessageFlag = "";
 
     @Override
     public void run() {
@@ -55,6 +56,7 @@ public class ViewMessage implements Runnable{
         UserPojo userPojo = new UserPojo();
         userPojo.setChatId(chatId);
         userPojo = userPojo.find();
+        userPojo.setOnMessageFlag(onMessageFlag);
         userPojo.setLastModifyViewMessage(System.currentTimeMillis());
         userPojo.insert();
 

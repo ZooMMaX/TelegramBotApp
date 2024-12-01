@@ -40,6 +40,9 @@ public class UserPojo extends MongoDBConnector {
     @Getter
     @Setter
     private long notificationMessageId = -100;
+    @Getter
+    @Setter
+    private String onMessageFlag = "";
 
     public UserPojo(){}
 
