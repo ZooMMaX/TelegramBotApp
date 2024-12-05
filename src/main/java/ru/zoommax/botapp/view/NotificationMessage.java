@@ -3,7 +3,9 @@ package ru.zoommax.botapp.view;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.*;
 import com.pengrad.telegrambot.request.*;
+import com.pengrad.telegrambot.response.BaseResponse;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.zoommax.botapp.db.pojo.MessageType;
@@ -16,9 +18,9 @@ import java.util.List;
 
 import static ru.zoommax.botapp.BotApp.bot;
 
+@Slf4j
 @Builder
 public class NotificationMessage implements Runnable{
-    private static final Logger log = LoggerFactory.getLogger(ViewMessage.class);
     private String message;
     private final long chatId;
     private NotifMarkup callbackKeyboard;
@@ -43,7 +45,6 @@ public class NotificationMessage implements Runnable{
                 inlineKeyboard = callbackKeyboard.getInlineKeyboard();
             }
         }
-        Logger logger = LoggerFactory.getLogger(NotificationMessage.class);
         if (caption != null && caption.length() > 1024) {
             message = caption;
             caption = null;
@@ -68,6 +69,9 @@ public class NotificationMessage implements Runnable{
         long NotifMessageId = userPojo.getNotificationMessageId();
         long messageId = userPojo.getLastMessageId();
         MessageType messageType = userPojo.getMessageTypeNotif();
+        if (messageType == null) {
+            messageType = MessageType.TEXT;
+        }
         if (messageId > -1) {
             bot.execute(new DeleteMessage(chatId, Math.toIntExact(messageId)));
         }*/
@@ -75,22 +79,24 @@ public class NotificationMessage implements Runnable{
         long NotifMessageId = userPojo.getNotificationMessageId();
         MessageType messageType = userPojo.getMessageTypeNotif();
 
+        if (messageType == null) {
+            messageType = MessageType.TEXT;
+        }
+
         if (image == null && video == null && audio == null && message == null && caption == null && images == null && document == null) {
             EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(NotifMessageId));
             e.replyMarkup(inlineKeyboard);
             bot.execute(e);
         } else {
-
             if (messageType == MessageType.TEXT) {
                 if (image != null || video != null || audio != null || images != null || document != null) {
                     sendMedia(chatId);
                     return;
                 }
 
-                if (!bot.execute(new EditMessageText(chatId, Math.toIntExact(NotifMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
+                if (NotifMessageId <= 0 || !bot.execute(new EditMessageText(chatId, Math.toIntExact(NotifMessageId), message).parseMode(ParseMode.HTML)).isOk()) {
                     sendText(chatId);
                 }
-
 
                 if (callbackKeyboard != null) {
                     EditMessageReplyMarkup e = new EditMessageReplyMarkup(chatId, Math.toIntExact(NotifMessageId));
@@ -109,7 +115,7 @@ public class NotificationMessage implements Runnable{
                         image != null && document != null || video != null && audio != null && images != null && document != null ||
                         video != null && audio != null && images != null || video != null && audio != null && document != null ||
                         video != null && images != null && document != null || audio != null && images != null && document != null) {
-                    logger.error("You can't send image, video and audio at the same time");
+                    log.error("You can't send image, video and audio at the same time");
                     return;
                 }
 

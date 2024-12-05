@@ -9,6 +9,8 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.model.request.InputFile;
 import com.pengrad.telegrambot.model.request.ParseMode;
 import com.pengrad.telegrambot.request.*;
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
@@ -26,7 +28,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
+@Slf4j
 public class BotApp implements Runnable {
     public static String defaultErrorMessage;
     public static TelegramBot bot;
@@ -152,7 +156,7 @@ public class BotApp implements Runnable {
                     if (!oldKB.toString().equals(entry.getValue().get("buttonsNames")) || sendNotif) {
                         sendNotif = false;
                         if (image.isEmpty()) {
-                            executor.submit(NotificationMessage.builder()
+                            executor.execute(NotificationMessage.builder()
                                     .chatId(Long.parseLong(entry.getKey()))
                                     .message(msgText)
                                     .callbackKeyboard(NotifMarkup.builder()
@@ -307,6 +311,8 @@ public class BotApp implements Runnable {
                                         Method method = listener.getMethod("onMessage", String.class, int.class, long.class, String.class, Update.class);
                                         viewMessage = (ViewMessage) method.invoke(listener.getDeclaredConstructor().newInstance(), update.message().text(), update.message().messageId(), update.message().chat().id(), userPojo.getOnMessageFlag(), update);
                                         if (viewMessage != null) {
+                                            userPojo.setOnMessageFlag("");
+                                            userPojo.insert();
                                             break;
                                         }
                                     } catch (InstantiationException | IllegalAccessException | InvocationTargetException |

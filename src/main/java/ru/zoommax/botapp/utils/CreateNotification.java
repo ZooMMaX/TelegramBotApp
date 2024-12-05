@@ -1,10 +1,12 @@
 package ru.zoommax.botapp.utils;
 
+import lombok.extern.slf4j.Slf4j;
 import ru.zoommax.botapp.db.pojo.NotificationPojo;
 import ru.zoommax.botapp.db.pojo.NotificationType;
 
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 public class CreateNotification implements Runnable{
     private final String message;
     private final String tg_id;
