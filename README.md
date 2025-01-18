@@ -1,29 +1,10 @@
-[![](https://jitpack.io/v/ZooMMaX/TelegramBotApp.svg)](https://jitpack.io/#ZooMMaX/TelegramBotApp)
+![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fs01.oss.sonatype.org%2Fcontent%2Frepositories%2Fsnapshots%2Fru%2Fzoommax%2FTelegramBotApp%2Fmaven-metadata.xml)
 
-maven depency
+# TelegramBotApp
 
-Add jitpack repo
+This repository has been archived due to rethinking, refactoring, etc.
 
-```xml
-	<repositories>
-		<repository>
-		    <id>jitpack.io</id>
-		    <url>https://jitpack.io</url>
-		</repository>
-	</repositories>
-```
+The updated project is located in a new repository and is called [OneMessageBot](https://github.com/ZooMMaX/OneMessageBot).
 
-add dependency
-
-```xml
-	<dependency>
-	    <groupId>com.github.ZooMMaX</groupId>
-	    <artifactId>TelegramBotApp</artifactId>
-	    <version>1.5-SNAPSHOT</version>
-	</dependency>
-```
-
-for add inline button:
-1. callback - `any text`
-2. url - `http...`
-3. mini app - `mapphttp...`
+## Attention!
+### Due to the large number of fixes, OneMessageBot is not backward compatible with TelegramBotApp!!!
